@@ -1,0 +1,91 @@
+---
+title: "Vector Databases in Production: What No One Tells You"
+date: "2026-04-28"
+tags: ["databases", "ai-infrastructure"]
+coverImage: "/blog/covers/vector-db.jpg"
+excerpt: "ANN indexes, embedding dimensionality, recall vs latency tradeoffs, and the operational overhead of running pgvector vs Qdrant vs Pinecone at scale."
+---
+
+Everyone's building with embeddings. Few teams have thought carefully about what happens when their vector database hits 50M vectors and the semantic search results start drifting.
+
+This post is for engineers who've shipped a RAG prototype and are now planning production scale.
+
+## The Index is Everything
+
+Vector similarity search is fundamentally an **approximate nearest neighbor** (ANN) problem. Exact search over 50M 1536-dimensional vectors is O(N × D) per query — completely infeasible at low latency.
+
+Every production vector DB uses an index to make this tractable. The two dominant index types:
+
+**HNSW (Hierarchical Navigable Small World)**
+- Graph-based, excellent recall at low latency
+- High memory overhead: ~100 bytes per vector at baseline, more with construction parameters
+- No support for on-disk indexes (traditionally) — everything lives in RAM
+- Best for: latency-sensitive, high-recall search
+
+**IVF (Inverted File Index)**
+- Clusters vectors into N partitions; searches only K partitions per query
+- Much lower memory: can be disk-resident (IVF_FLAT, IVF_PQ)
+- Tuning `nprobe` controls the recall–latency tradeoff directly
+- Best for: memory-constrained, high-cardinality datasets
+
+The classic mistake: choosing HNSW for a 100M-vector dataset and discovering at 4am that you need 160GB of RAM for a service you sized at 32GB.
+
+## The Recall Trap
+
+Benchmark leaderboards measure **recall@10** — the fraction of true nearest neighbors that appear in your top-10 results. A 0.95 recall@10 sounds great until you realize:
+
+- For a 10-result search, you're missing ~0.5 results on average
+- Embedding quality degrades recall far more than index choice
+- Metadata filters applied *after* ANN search (post-filtering) tank effective recall
+
+**Pre-filtering vs post-filtering** is a real operational decision:
+- **Post-filter**: fast index traversal → apply filter → often returns fewer than K results
+- **Pre-filter**: filter first → search only matching subset → requires per-filter indexes or segment-level routing
+
+Qdrant's payload indexes and Weaviate's inverted index hybrid handle pre-filtering correctly. pgvector's `WHERE` clauses post-filter unless you build partial indexes.
+
+## pgvector vs Dedicated Vector DBs
+
+**pgvector** is the right choice when:
+- You're already on Postgres and the vector data co-locates naturally with relational data
+- Your dataset is under ~5M vectors at 1536D with HNSW
+- You need transactional consistency between vector and relational updates
+
+The limitations are real:
+- HNSW build time in Postgres is slow compared to dedicated engines
+- No native distributed index (horizontal scaling requires Citus or manual sharding)
+- Recall degrades faster under concurrent writes than Qdrant or Weaviate
+
+**Qdrant** wins when:
+- Dataset is >10M vectors
+- You need rich payload filtering at low latency
+- You want a Rust-native service with predictable resource consumption
+
+**Pinecone** wins when:
+- You want fully managed with zero operational overhead
+- Cost is acceptable (it's expensive at scale)
+- Team bandwidth is the constraint, not engineering control
+
+## Embedding Dimensionality: Less is Often Better
+
+Higher dimensions do not monotonically improve search quality. The curse of dimensionality means cosine distance loses discriminative power above a threshold. For most domain-specific search tasks:
+
+- `text-embedding-3-small` (1536D, reduced to 256D via MRL) often outperforms full 3072D on domain benchmarks
+- Matryoshka Representation Learning (MRL) allows truncating embeddings post-hoc without retraining
+- Reducing from 1536D → 512D cuts memory by 3× with <2% recall loss on most corpora
+
+Run the benchmark on your actual data before committing to a dimension count.
+
+## Operational Checklist for Production
+
+Before going live with a vector database at scale:
+
+- [ ] Measure recall@10 on a representative sample of your actual queries, not the benchmark dataset
+- [ ] Load-test index build time with your full dataset size
+- [ ] Define memory budget per node and validate against HNSW M/ef_construction parameters
+- [ ] Implement an embedding refresh pipeline (models get updated; stale embeddings are silent quality regressions)
+- [ ] Monitor **query latency p99**, not just mean — ANN latency has a long tail
+- [ ] Plan for collection/index migrations (schema changes are painful in vector DBs)
+- [ ] Set up recall monitoring — run ground-truth brute-force on a 1% sample weekly
+
+The teams who run vector search well treat embedding quality, index tuning, and recall monitoring as ongoing engineering disciplines — not a setup you do once and forget.

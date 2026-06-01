@@ -1,0 +1,210 @@
+@import "tailwindcss";
+
+/* ─── Design tokens ─────────────────────────────────────── */
+:root {
+  /* Light mode */
+  --bg: #F7F8FA;
+  --surface: #FFFFFF;
+  --surface-2: #F1F5F9;
+  --text: #1E293B;
+  --text-muted: #64748B;
+  --accent: #3B82F6;
+  --accent-dim: rgba(59, 130, 246, 0.12);
+  --border: rgba(30, 41, 59, 0.10);
+  --border-strong: rgba(30, 41, 59, 0.18);
+  --grid-dot: rgba(59, 130, 246, 0.18);
+  --grid-line: rgba(59, 130, 246, 0.06);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+  /* Status colors */
+  --status-green: #10B981;
+  --status-amber: #F59E0B;
+  --status-red: #EF4444;
+  --status-blue: #3B82F6;
+  /* Research area colors */
+  --tag-distributed: #8B5CF6;
+  --tag-ai: #3B82F6;
+  --tag-database: #10B981;
+  --tag-observability: #F59E0B;
+  --tag-security: #EF4444;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0F1117;
+    --surface: #1A1D27;
+    --surface-2: #222636;
+    --text: #E2E8F0;
+    --text-muted: #94A3B8;
+    --accent: #3B82F6;
+    --accent-dim: rgba(59, 130, 246, 0.15);
+    --border: rgba(255, 255, 255, 0.06);
+    --border-strong: rgba(255, 255, 255, 0.12);
+    --grid-dot: rgba(255, 255, 255, 0.08);
+    --grid-line: rgba(255, 255, 255, 0.04);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+    --shadow-lg: 0 12px 32px rgba(0,0,0,0.5);
+  }
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+}
+
+/* ─── Base ──────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Blueprint grid pattern ────────────────────────────── */
+.blueprint-grid {
+  background-image: radial-gradient(circle, var(--grid-dot) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.blueprint-grid-lg {
+  background-image: radial-gradient(circle, var(--grid-dot) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ─── Typography scale ──────────────────────────────────── */
+.font-sans { font-family: var(--font-inter), system-ui, sans-serif; }
+.font-display { font-family: var(--font-ibm), system-ui, sans-serif; }
+.font-mono { font-family: var(--font-mono), 'Courier New', monospace; }
+
+/* ─── Annotation label ──────────────────────────────────── */
+.annotation {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ─── Reading progress bar ──────────────────────────────── */
+.reading-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: var(--accent);
+  z-index: 9999;
+  transition: width 0.1s linear;
+}
+
+/* ─── Card base ─────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ─── Tag pill ──────────────────────────────────────────── */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+/* ─── Selection ─────────────────────────────────────────── */
+::selection {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+/* ─── Focus ring ────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─── Prose overrides for MDX ───────────────────────────── */
+.prose-blueprint h1,
+.prose-blueprint h2,
+.prose-blueprint h3 {
+  font-family: var(--font-ibm), system-ui, sans-serif;
+  color: var(--text);
+}
+
+.prose-blueprint h2 {
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+}
+
+.prose-blueprint p {
+  color: var(--text);
+  line-height: 1.8;
+  margin-bottom: 1.5rem;
+}
+
+.prose-blueprint code {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.875em;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 5px;
+}
+
+.prose-blueprint pre {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  overflow-x: auto;
+}
+
+.prose-blueprint pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.875rem;
+}
+
+.prose-blueprint blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.prose-blueprint a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-dim);
+}
+
+.prose-blueprint img {
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
