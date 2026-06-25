@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ExternalLink, GitBranch } from "lucide-react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import SectionLabel from "@/components/ui/SectionLabel";
+import MagneticCard from "@/components/ui/MagneticCard";
 
 const PROJECTS = [
   {
@@ -61,8 +62,8 @@ export default function Projects() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.1 }}
-              className="card p-6 flex flex-col gap-4"
             >
+            <MagneticCard intensity={6} className="card p-6 flex flex-col gap-4 h-full">
               {/* Header */}
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -135,6 +136,7 @@ export default function Projects() {
                   </a>
                 )}
               </div>
+            </MagneticCard>
             </motion.div>
           ))}
         </div>

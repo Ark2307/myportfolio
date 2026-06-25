@@ -3,8 +3,8 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import BlueprintGrid from "@/components/ui/BlueprintGrid";
-
-const NAME = "Aryan Khandelwal";
+import CursorSpotlight from "@/components/ui/CursorSpotlight";
+import WordReveal from "@/components/ui/WordReveal";
 
 export default function Hero() {
   return (
@@ -12,48 +12,72 @@ export default function Hero() {
       className="relative min-h-[92vh] flex items-center overflow-hidden"
       style={{ background: "var(--bg)" }}
     >
+      <CursorSpotlight />
       <BlueprintGrid showCornerMarks size="lg" />
 
-      {/* Blueprint mechanical drawing overlay — subtle SVG lines */}
+      {/* Blueprint mechanical drawing overlay */}
       <svg
         className="absolute inset-0 w-full h-full pointer-events-none"
         aria-hidden="true"
-        style={{ opacity: 0.04 }}
+        style={{ opacity: 0.045 }}
       >
-        {/* Horizontal guide lines */}
         <line x1="0" y1="20%" x2="100%" y2="20%" stroke="var(--accent)" strokeWidth="0.5" strokeDasharray="4 8" />
         <line x1="0" y1="80%" x2="100%" y2="80%" stroke="var(--accent)" strokeWidth="0.5" strokeDasharray="4 8" />
-        {/* Vertical guide lines */}
         <line x1="15%" y1="0" x2="15%" y2="100%" stroke="var(--accent)" strokeWidth="0.5" strokeDasharray="4 8" />
         <line x1="85%" y1="0" x2="85%" y2="100%" stroke="var(--accent)" strokeWidth="0.5" strokeDasharray="4 8" />
-        {/* Diagonal annotation lines */}
         <line x1="5%" y1="5%" x2="20%" y2="30%" stroke="var(--accent)" strokeWidth="0.5" />
         <line x1="95%" y1="5%" x2="80%" y2="30%" stroke="var(--accent)" strokeWidth="0.5" />
       </svg>
 
-      {/* Annotation labels */}
-      <div className="absolute top-8 left-8 hidden lg:block" aria-hidden="true">
-        <span className="annotation opacity-40">SYS://PORTFOLIO_v1.0</span>
-      </div>
-      <div className="absolute top-8 right-8 hidden lg:block" aria-hidden="true">
-        <span className="annotation opacity-40">STATUS: OPERATIONAL</span>
-      </div>
+      {/* Floating annotation labels */}
+      <motion.div
+        className="absolute top-8 left-8 hidden lg:block"
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 0.4, x: 0 }}
+        transition={{ delay: 1.2, duration: 0.6 }}
+        aria-hidden="true"
+      >
+        <span className="annotation">SYS://PORTFOLIO_v1.0</span>
+      </motion.div>
+      <motion.div
+        className="absolute top-8 right-8 hidden lg:block"
+        initial={{ opacity: 0, x: 10 }}
+        animate={{ opacity: 0.4, x: 0 }}
+        transition={{ delay: 1.4, duration: 0.6 }}
+        aria-hidden="true"
+      >
+        <span className="annotation">STATUS: OPERATIONAL</span>
+      </motion.div>
+
+      {/* Animated border lines that draw in */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
+        <motion.rect
+          x="32" y="32"
+          width="calc(100% - 64px)" height="calc(100% - 64px)"
+          rx="4" fill="none"
+          stroke="var(--accent)" strokeWidth="0.5"
+          strokeDasharray="8 6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.12 }}
+          transition={{ delay: 0.8, duration: 1 }}
+        />
+      </svg>
 
       {/* Main content */}
-      <div className="relative z-10 max-w-6xl mx-auto px-6 py-20">
+      <div className="relative z-10 max-w-6xl mx-auto px-6 py-20 w-full">
         <div className="max-w-3xl">
-          {/* Role badge */}
+          {/* Role badge with typewriter shimmer */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="mb-6"
+            className="mb-8"
           >
             <span
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border font-mono text-xs font-medium"
               style={{
                 color: "var(--accent)",
-                borderColor: "var(--accent-dim)",
+                borderColor: "rgba(59,130,246,0.3)",
                 background: "var(--accent-dim)",
               }}
             >
@@ -62,50 +86,52 @@ export default function Hero() {
             </span>
           </motion.div>
 
-          {/* Name */}
-          <motion.h1
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+          {/* Name — word reveal */}
+          <h1
             className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] mb-6"
             style={{ fontFamily: "var(--font-ibm)", color: "var(--text)" }}
           >
-            {NAME}
-          </motion.h1>
+            <WordReveal text="Aryan" delay={0.1} stagger={0.08} />
+            <br />
+            <WordReveal text="Khandelwal" delay={0.25} stagger={0.06} />
+          </h1>
 
-          {/* Mission statement */}
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+          {/* Mission — word reveal with blur */}
+          <div
             className="text-xl sm:text-2xl leading-relaxed mb-10 max-w-2xl"
             style={{ color: "var(--text-muted)", fontFamily: "var(--font-ibm)" }}
           >
-            Building distributed systems at scale. Writing about the architecture decisions,
-            tradeoffs, and failures that shape how we engineer software.
-          </motion.p>
+            <WordReveal
+              text="Building distributed systems at scale. Writing about the architecture decisions, tradeoffs, and failures that shape how we engineer software."
+              delay={0.5}
+              stagger={0.025}
+            />
+          </div>
 
           {/* CTAs */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+            transition={{ duration: 0.6, delay: 1.0, ease: "easeOut" }}
             className="flex flex-col sm:flex-row gap-3"
           >
             <Link
               href="/blog"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all"
-              style={{
-                background: "var(--accent)",
-                color: "#fff",
-              }}
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all hover:opacity-90 hover:-translate-y-0.5"
+              style={{ background: "var(--accent)", color: "#fff" }}
             >
               View Architecture Notes
-              <span aria-hidden="true">→</span>
+              <motion.span
+                animate={{ x: [0, 4, 0] }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                aria-hidden="true"
+              >
+                →
+              </motion.span>
             </Link>
             <Link
               href="/#projects"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium text-sm transition-all hover:-translate-y-0.5"
               style={{
                 background: "var(--surface)",
                 color: "var(--text)",
@@ -120,8 +146,8 @@ export default function Hero() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="mt-16 pt-8 flex flex-wrap gap-6"
+            transition={{ duration: 0.8, delay: 1.2 }}
+            className="mt-16 pt-8 flex flex-wrap gap-8"
             style={{ borderTop: "1px solid var(--border)" }}
           >
             {[
@@ -129,9 +155,9 @@ export default function Hero() {
               ["Focus", "Distributed Systems · AI Infra"],
               ["Based in", "India"],
             ].map(([key, val]) => (
-              <div key={key} className="flex flex-col gap-0.5">
+              <div key={key} className="flex flex-col gap-1">
                 <span className="annotation" style={{ color: "var(--text-muted)" }}>{key}</span>
-                <span className="font-mono text-xs" style={{ color: "var(--text)" }}>{val}</span>
+                <span className="font-mono text-xs font-medium" style={{ color: "var(--text)" }}>{val}</span>
               </div>
             ))}
           </motion.div>
@@ -140,10 +166,27 @@ export default function Hero() {
 
       {/* Bottom fade */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
+        className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
         style={{ background: "linear-gradient(to bottom, transparent, var(--bg))" }}
         aria-hidden="true"
       />
+
+      {/* Scroll indicator */}
+      <motion.div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.8 }}
+        aria-hidden="true"
+      >
+        <span className="annotation opacity-40">scroll</span>
+        <motion.div
+          className="w-px h-8"
+          style={{ background: "var(--accent)", opacity: 0.3 }}
+          animate={{ scaleY: [1, 0.3, 1] }}
+          transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut" }}
+        />
+      </motion.div>
     </section>
   );
 }
