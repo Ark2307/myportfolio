@@ -2,7 +2,6 @@
 title: "Kafka, Parallel Consumers, and the 6-Hour Testing Bottleneck"
 date: "2026-05-25"
 tags: ["distributed-systems", "observability"]
-coverImage: "/blog/covers/kafka-parallel.jpg"
 excerpt: "How I redesigned a Kafka consumer architecture to achieve 100x throughput improvement — eliminating offset safety bugs, rebalance storms, and crash recovery failures in a production API security testing pipeline."
 ---
 

@@ -54,6 +54,9 @@
   --color-foreground: var(--text);
 }
 
+/* ─── Global keyframes ──────────────────────────────────── */
+@keyframes bca-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
 /* ─── Base ──────────────────────────────────────────────── */
 html {
   scroll-behavior: smooth;

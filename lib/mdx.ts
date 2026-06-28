@@ -41,16 +41,15 @@ function readDir(category: PostCategory): PostMeta[] {
     .readdirSync(dir)
     .filter((f) => exts.some((ext) => f.endsWith(ext)));
 
-  return files
-    .map((filename) => {
-      const slug = filename.replace(/\.(mdx|md)$/, "");
-      const raw = fs.readFileSync(path.join(dir, filename), "utf-8");
-      const { data, content } = matter(raw);
+  return files.flatMap((filename): PostMeta[] => {
+    const slug = filename.replace(/\.(mdx|md)$/, "");
+    const raw = fs.readFileSync(path.join(dir, filename), "utf-8");
+    const { data, content } = matter(raw);
 
-      // Skip files with no meaningful content or frontmatter title
-      if (!data.title && content.trim().length < 10) return null;
+    if (!data.title && content.trim().length < 10) return [];
 
-      return {
+    return [
+      {
         slug,
         category,
         title: data.title ?? slug.replace(/-/g, " "),
@@ -59,9 +58,9 @@ function readDir(category: PostCategory): PostMeta[] {
         coverImage: data.coverImage,
         excerpt: data.excerpt ?? content.trim().slice(0, 160).replace(/\n/g, " "),
         readingTime: wordsToMinutes(content),
-      } satisfies PostMeta;
-    })
-    .filter((p): p is PostMeta => p !== null);
+      },
+    ];
+  });
 }
 
 export function getAllPosts(categories?: PostCategory[]): PostMeta[] {

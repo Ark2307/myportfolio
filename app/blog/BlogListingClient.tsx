@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { getAllPostStats } from "@/lib/db";
 import type { PostMeta } from "@/lib/mdx";
 import BlogCard from "@/components/blog/BlogCard";
@@ -16,11 +16,12 @@ const TAG_LABELS: Record<string, string> = {
 
 interface BlogListingClientProps {
   posts: PostMeta[];
+  initialTag: string | null;
 }
 
-export default function BlogListingClient({ posts }: BlogListingClientProps) {
+export default function BlogListingClient({ posts, initialTag }: BlogListingClientProps) {
   const [statsMap, setStatsMap] = useState<Record<string, { scrollPercent: number; isRead: boolean }>>({});
-  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [activeTag, setActiveTag] = useState<string | null>(initialTag);
   const [totalRead, setTotalRead] = useState(0);
   const [totalMinutes, setTotalMinutes] = useState(0);
 
@@ -38,6 +39,14 @@ export default function BlogListingClient({ posts }: BlogListingClientProps) {
       setTotalRead(read);
       setTotalMinutes(Math.round(secs / 60));
     });
+  }, []);
+
+  const handleTagClick = useCallback((tag: string | null) => {
+    setActiveTag(tag);
+    const url = tag
+      ? `${window.location.pathname}?tag=${encodeURIComponent(tag)}`
+      : window.location.pathname;
+    history.replaceState(null, "", url);
   }, []);
 
   const allTags = useMemo(() => {
@@ -71,7 +80,6 @@ export default function BlogListingClient({ posts }: BlogListingClientProps) {
             </span>
           )}
 
-          {/* Progress bar overall */}
           <div className="flex items-center gap-2 ml-auto">
             <div className="w-32 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--border)" }}>
               <div
@@ -105,7 +113,7 @@ export default function BlogListingClient({ posts }: BlogListingClientProps) {
         {/* Tag filters */}
         <div className="flex flex-wrap gap-2 mb-10">
           <button
-            onClick={() => setActiveTag(null)}
+            onClick={() => handleTagClick(null)}
             className="tag cursor-pointer transition-colors"
             style={{
               background: !activeTag ? "var(--accent)" : "var(--surface-2)",
@@ -119,7 +127,7 @@ export default function BlogListingClient({ posts }: BlogListingClientProps) {
             return (
               <button
                 key={tag}
-                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                onClick={() => handleTagClick(activeTag === tag ? null : tag)}
                 className="tag cursor-pointer transition-colors"
                 style={{
                   background: activeTag === tag ? "var(--accent)" : "var(--surface-2)",

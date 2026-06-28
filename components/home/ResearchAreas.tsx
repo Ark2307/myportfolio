@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Network, Brain, Database, Activity, Shield } from "lucide-react";
 import SectionLabel from "@/components/ui/SectionLabel";
@@ -76,8 +77,11 @@ export default function ResearchAreas({ posts }: ResearchAreasProps) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="card group p-6 cursor-default"
-                style={{ borderLeft: `3px solid ${area.color}` }}
+              >
+              <Link
+                href={`/blog?tag=${area.id}`}
+                className="card group p-6 block"
+                style={{ borderLeft: `3px solid ${area.color}`, textDecoration: "none" }}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div
@@ -105,6 +109,7 @@ export default function ResearchAreas({ posts }: ResearchAreasProps) {
                 <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
                   {area.desc}
                 </p>
+              </Link>
               </motion.div>
             );
           })}

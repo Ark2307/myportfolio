@@ -10,6 +10,7 @@ import type { PostMeta } from "@/lib/mdx";
 import ReadingProgress from "@/components/blog/ReadingProgress";
 import ReadingPrompt from "@/components/blog/ReadingPrompt";
 import NextReadSuggestions from "@/components/blog/NextReadSuggestions";
+import BlogCoverArt from "@/components/blog/BlogCoverArt";
 
 const TAG_COLORS: Record<string, string> = {
   "distributed-systems": "var(--tag-distributed)",
@@ -47,20 +48,21 @@ export default function BlogPostClient({ post, suggestions }: BlogPostClientProp
       <ReadingProgress postId={post.slug} initialPercent={initialPercent} />
 
       <article style={{ background: "var(--bg)" }}>
-        {/* Hero image */}
-        {post.coverImage && (
-          <div className="w-full" style={{ maxHeight: 480, overflow: "hidden" }}>
+        {/* Hero cover */}
+        <div className="w-full overflow-hidden" style={{ maxHeight: 420, aspectRatio: "800/450" }}>
+          {post.coverImage ? (
             <Image
               src={post.coverImage}
               alt={post.title}
               width={1200}
               height={480}
-              className="w-full object-cover"
+              className="w-full h-full object-cover"
               priority
-              style={{ maxHeight: 480 }}
             />
-          </div>
-        )}
+          ) : (
+            <BlogCoverArt slug={post.slug} tags={post.tags} className="h-full" />
+          )}
+        </div>
 
         {/* Article header */}
         <div

@@ -2,7 +2,6 @@
 title: "Kafka Internals: What Every Engineer Should Actually Know"
 date: "2026-05-22"
 tags: ["distributed-systems", "databases"]
-coverImage: "/blog/covers/kafka-internals.jpg"
 excerpt: "A ground-up explanation of how Kafka actually works — log segments, consumer groups, ISR, offset management, exactly-once semantics, and the tradeoffs hiding beneath every configuration knob."
 ---
 

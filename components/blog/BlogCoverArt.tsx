@@ -1,0 +1,558 @@
+"use client";
+
+/* ──────────────────────────────────────────────────────────
+   Inline animated SVG cover art — renders live in browser.
+   Used when a blog post has no static cover image.
+   ────────────────────────────────────────────────────────── */
+
+const STYLE = `
+  @keyframes bca-pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+  @keyframes bca-glow  { 0%,100%{opacity:0.6} 50%{opacity:1} }
+  @keyframes bca-newseg { 0%,75%{fill:rgba(59,130,246,0.07)} 88%{fill:rgba(59,130,246,0.22)} 100%{fill:rgba(59,130,246,0.07)} }
+  @keyframes bca-isrsync { 0%{opacity:0.25} 50%{opacity:0.85} 100%{opacity:0.25} }
+`;
+
+/* ── BoostingTesting: parallel consumer flow ───────────── */
+function BoostingTestingCover() {
+  return (
+    <svg
+      viewBox="0 0 800 450"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full h-full"
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <style>{STYLE}</style>
+        <pattern id="bt-dots" width="24" height="24" patternUnits="userSpaceOnUse">
+          <circle cx="12" cy="12" r="0.7" fill="rgba(255,255,255,0.045)" />
+        </pattern>
+        <filter id="bt-gb">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="bt-gp">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="bt-gg">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <radialGradient id="bt-bg" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.05" />
+          <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+        </radialGradient>
+        {/* Motion paths */}
+        <path id="bt-g0" d="M 400 88 L 400 112 L 160 112 L 160 148" />
+        <path id="bt-g1" d="M 400 88 L 400 148" />
+        <path id="bt-g2" d="M 400 88 L 400 112 L 640 112 L 640 148" />
+        <path id="bt-p0" d="M 160 204 L 160 288" />
+        <path id="bt-p1" d="M 400 204 L 400 288" />
+        <path id="bt-p2" d="M 640 204 L 640 288" />
+      </defs>
+
+      {/* Background */}
+      <rect width="800" height="450" fill="#0F1117" />
+      <rect width="800" height="450" fill="url(#bt-dots)" />
+      <ellipse cx="400" cy="220" rx="380" ry="210" fill="url(#bt-bg)" />
+
+      {/* Header */}
+      <text x="400" y="22" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8.5" fill="#334155" letterSpacing="3">
+        SYSTEM IMPROVEMENT STUDY · KAFKA CONSUMER RE-ARCHITECTURE
+      </text>
+
+      {/* ── LOAD GENERATOR ── */}
+      <rect x="300" y="36" width="200" height="52" rx="5" fill="#0F1117" stroke="#3B82F6" strokeWidth="1.5" />
+      <rect x="300" y="36" width="200" height="52" rx="5" fill="rgba(59,130,246,0.07)" />
+      <text x="400" y="54" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#475569" letterSpacing="2.5">LOAD GENERATOR</text>
+      <text x="400" y="74" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="14" fontWeight="700" fill="#3B82F6">k6 · JMeter</text>
+      <circle cx="491" cy="44" r="3.5" fill="#3B82F6" style={{ animation: "bca-pulse 1.4s ease-in-out infinite" }} filter="url(#bt-gb)" />
+
+      {/* Traces: generator → bus → partitions */}
+      <path d="M 400 88 L 400 112" stroke="#8B5CF6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+      <path d="M 160 112 L 640 112" stroke="#8B5CF6" strokeWidth="1" fill="none" opacity="0.18" />
+      <path d="M 160 112 L 160 148" stroke="#8B5CF6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+      <path d="M 400 112 L 400 148" stroke="#8B5CF6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+      <path d="M 640 112 L 640 148" stroke="#8B5CF6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+      {/* Junction squares */}
+      {[160, 400, 640].map((cx) => (
+        <rect key={cx} x={cx - 3} y={109} width={6} height={6} rx="1" fill="#8B5CF6" opacity="0.55" />
+      ))}
+
+      {/* ── PARTITIONS ── */}
+      {([["P0", 70, 160, "0s"], ["P1", 310, 400, "0.3s"], ["P2", 550, 640, "0.6s"]] as const).map(
+        ([id, x, cx, delay]) => (
+          <g key={id}>
+            <rect x={x} y={148} width={180} height={56} rx="5" fill="#0F1117" stroke="#8B5CF6" strokeWidth="1.5" />
+            <rect x={x} y={148} width={180} height={56} rx="5" fill="rgba(139,92,246,0.08)" />
+            <text x={cx} y={166} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#64748B" letterSpacing="2.5">KAFKA PARTITION</text>
+            <text x={cx} y={186} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="16" fontWeight="700" fill="#8B5CF6">{id}</text>
+            <circle cx={x + 170} cy={156} r="3" fill="#8B5CF6" style={{ animation: `bca-pulse 2s ease-in-out infinite`, animationDelay: delay }} filter="url(#bt-gp)" />
+          </g>
+        )
+      )}
+
+      {/* Traces: partitions → consumers */}
+      {[160, 400, 640].map((cx) => (
+        <path key={cx} d={`M ${cx} 204 L ${cx} 288`} stroke="#10B981" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+      ))}
+
+      {/* ── CONSUMERS ── */}
+      {([["C0", 70, 160, "0.1s"], ["C1", 310, 400, "0.5s"], ["C2", 550, 640, "0.9s"]] as const).map(
+        ([id, x, cx, delay]) => (
+          <g key={id}>
+            <rect x={x} y={288} width={180} height={56} rx="5" fill="#0F1117" stroke="#10B981" strokeWidth="1.5" />
+            <rect x={x} y={288} width={180} height={56} rx="5" fill="rgba(16,185,129,0.08)" />
+            <text x={cx} y={306} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#64748B" letterSpacing="2.5">CONSUMER</text>
+            <text x={cx} y={326} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="16" fontWeight="700" fill="#10B981">{id}</text>
+            <circle cx={x + 170} cy={296} r="3" fill="#10B981" style={{ animation: `bca-pulse 1.8s ease-in-out infinite`, animationDelay: delay }} filter="url(#bt-gg)" />
+          </g>
+        )
+      )}
+
+      {/* ── ANIMATED DATA PACKETS ── */}
+      {/* gen → partitions */}
+      {(["bt-g0", "bt-g1", "bt-g2"] as const).map((pid, i) => (
+        <circle key={pid} r="4" fill="#3B82F6" filter="url(#bt-gb)">
+          <animateMotion dur="1.8s" repeatCount="indefinite" begin={`${i * 0.45}s`} calcMode="linear">
+            <mpath href={`#${pid}`} />
+          </animateMotion>
+        </circle>
+      ))}
+      {/* partitions → consumers */}
+      {(["bt-p0", "bt-p1", "bt-p2"] as const).map((pid, i) => (
+        <circle key={pid} r="4" fill="#8B5CF6" filter="url(#bt-gp)">
+          <animateMotion dur="1.4s" repeatCount="indefinite" begin={`${1.0 + i * 0.5}s`} calcMode="linear">
+            <mpath href={`#${pid}`} />
+          </animateMotion>
+        </circle>
+      ))}
+
+      {/* ── RESULT METRIC ── */}
+      <rect x="215" y="366" width="370" height="50" rx="6" fill="rgba(59,130,246,0.07)" stroke="rgba(59,130,246,0.2)" strokeWidth="1" />
+      <text x="400" y="383" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#475569" letterSpacing="3">RESULT</text>
+      <text x="400" y="404" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="15" fontWeight="700" fill="#3B82F6">1 hour → 36 seconds · 100× throughput</text>
+
+      {/* Corner annotations */}
+      <text x="18" y="444" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">aryan.dev</text>
+      <text x="782" y="444" textAnchor="end" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">distributed-systems · observability</text>
+    </svg>
+  );
+}
+
+/* ── Kafka Internals: commit log architecture ──────────── */
+function KafkaLogCover() {
+  const segs = ["S0", "S1", "S2", "S3", "S4"];
+  const SW = 82;
+  const SH = 64;
+  const SY = 168;
+  const SX0 = 152;
+  const GAP = 8;
+  const segCX = (i: number) => SX0 + i * (SW + GAP) + SW / 2;
+  const segX = (i: number) => SX0 + i * (SW + GAP);
+
+  return (
+    <svg
+      viewBox="0 0 800 450"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full h-full"
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <style>{STYLE}</style>
+        <pattern id="kl-dots" width="24" height="24" patternUnits="userSpaceOnUse">
+          <circle cx="12" cy="12" r="0.7" fill="rgba(255,255,255,0.045)" />
+        </pattern>
+        <filter id="kl-gb">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="kl-gg">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="kl-gp">
+          <feGaussianBlur stdDeviation="2.5" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <radialGradient id="kl-bg" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0" />
+        </radialGradient>
+        {/* Motion paths */}
+        <path id="kl-prod" d="M 128 200 L 152 200" />
+        <path id="kl-cons" d="M 584 200 L 630 200" />
+        <path id="kl-isr0" d="M 193 232 L 240 318" />
+        <path id="kl-isr1" d="M 357 232 L 390 318" />
+        <path id="kl-isr2" d="M 561 232 L 530 318" />
+      </defs>
+
+      {/* Background */}
+      <rect width="800" height="450" fill="#0F1117" />
+      <rect width="800" height="450" fill="url(#kl-dots)" />
+      <ellipse cx="400" cy="220" rx="370" ry="200" fill="url(#kl-bg)" />
+
+      {/* Header */}
+      <text x="400" y="22" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8.5" fill="#334155" letterSpacing="3">
+        KAFKA INTERNALS · COMMIT LOG ARCHITECTURE
+      </text>
+
+      {/* Log label */}
+      <text x="400" y="152" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="9" fill="#475569" letterSpacing="2">
+        PARTITION 0 · APPEND-ONLY COMMIT LOG
+      </text>
+
+      {/* ── LOG SEGMENTS ── */}
+      {segs.map((seg, i) => {
+        const isLast = i === segs.length - 1;
+        const x = segX(i);
+        const cx = segCX(i);
+        return (
+          <g key={seg}>
+            <rect
+              x={x} y={SY} width={SW} height={SH} rx="4"
+              fill={isLast ? "rgba(59,130,246,0.1)" : "rgba(26,29,39,0.95)"}
+              stroke={isLast ? "#3B82F6" : "#8B5CF6"}
+              strokeWidth={isLast ? 1.5 : 1}
+              style={isLast ? { animation: "bca-newseg 3s ease-in-out infinite" } : undefined}
+            />
+            <text x={cx} y={SY + 20} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#475569" letterSpacing="1">SEGMENT</text>
+            <text x={cx} y={SY + 43} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="18" fontWeight="700" fill={isLast ? "#3B82F6" : "#8B5CF6"}>{seg}</text>
+            <text x={cx} y={SY + SH + 14} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#1E3A5F">
+              off {i * 100}+
+            </text>
+          </g>
+        );
+      })}
+
+      {/* → new indicator */}
+      <text
+        x={segX(segs.length) + 4} y={SY + SH / 2 + 6}
+        fontFamily="'Courier New',monospace" fontSize="14" fill="#3B82F6"
+        style={{ animation: "bca-pulse 1.5s ease-in-out infinite" }}
+      >→</text>
+
+      {/* ── PRODUCER ── */}
+      <rect x="18" y="184" width="110" height="48" rx="5" fill="#0F1117" stroke="#3B82F6" strokeWidth="1.5" />
+      <rect x="18" y="184" width="110" height="48" rx="5" fill="rgba(59,130,246,0.07)" />
+      <text x="73" y="203" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#475569" letterSpacing="1.5">PRODUCER</text>
+      <text x="73" y="222" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="13" fontWeight="600" fill="#3B82F6">write</text>
+      <circle cx="120" cy="192" r="3" fill="#3B82F6" style={{ animation: "bca-pulse 1.2s ease-in-out infinite" }} filter="url(#kl-gb)" />
+      <path d="M 128 208 L 152 208" stroke="#3B82F6" strokeWidth="1" fill="none" strokeDasharray="3 2" opacity="0.35" />
+
+      {/* ── CONSUMER ── */}
+      <rect x="648" y="184" width="110" height="48" rx="5" fill="#0F1117" stroke="#10B981" strokeWidth="1.5" />
+      <rect x="648" y="184" width="110" height="48" rx="5" fill="rgba(16,185,129,0.07)" />
+      <text x="703" y="203" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#475569" letterSpacing="1.5">CONSUMER</text>
+      <text x="703" y="222" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="13" fontWeight="600" fill="#10B981">read</text>
+      <circle cx="658" cy="192" r="3" fill="#10B981" style={{ animation: "bca-pulse 1.8s ease-in-out infinite" }} filter="url(#kl-gg)" />
+      <path d="M 584 208 L 648 208" stroke="#10B981" strokeWidth="1" fill="none" strokeDasharray="3 2" opacity="0.35" />
+
+      {/* Animated data packets */}
+      {[0, 0.55].map((delay) => (
+        <circle key={delay} r="4" fill="#3B82F6" filter="url(#kl-gb)">
+          <animateMotion dur="1.1s" repeatCount="indefinite" begin={`${delay}s`} calcMode="linear">
+            <mpath href="#kl-prod" />
+          </animateMotion>
+        </circle>
+      ))}
+      {[0.25, 0.9].map((delay) => (
+        <circle key={delay} r="4" fill="#10B981" filter="url(#kl-gg)">
+          <animateMotion dur="1.2s" repeatCount="indefinite" begin={`${delay}s`} calcMode="linear">
+            <mpath href="#kl-cons" />
+          </animateMotion>
+        </circle>
+      ))}
+
+      {/* ── ISR REPLICAS ── */}
+      <text x="400" y="308" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#334155" letterSpacing="2">
+        IN-SYNC REPLICAS (ISR)
+      </text>
+
+      {(
+        [
+          ["LEADER", 180, 240, "#3B82F6"],
+          ["FOLLOWER A", 330, 390, "#8B5CF6"],
+          ["FOLLOWER B", 470, 530, "#8B5CF6"],
+        ] as const
+      ).map(([label, x, cx, color]) => (
+        <g key={label}>
+          <rect x={x} y={318} width={120} height={44} rx="4" fill="#0F1117" stroke={color} strokeWidth="1" />
+          <rect x={x} y={318} width={120} height={44} rx="4" fill={`${color}10`} />
+          <text x={cx} y={335} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#475569" letterSpacing="1.5">{label}</text>
+          <circle cx={cx} cy={350} r="5.5" fill="none" stroke={color} strokeWidth="1.5" style={{ animation: "bca-isrsync 2.2s ease-in-out infinite" }} filter="url(#kl-gp)" />
+          <circle cx={cx} cy={350} r="2.5" fill={color} style={{ animation: "bca-isrsync 2.2s ease-in-out infinite" }} />
+        </g>
+      ))}
+
+      {/* ISR sync lines + packets */}
+      {(
+        [
+          ["kl-isr0", "#3B82F6", "M 193 232 L 240 318"],
+          ["kl-isr1", "#8B5CF6", "M 357 232 L 390 318"],
+          ["kl-isr2", "#8B5CF6", "M 561 232 L 530 318"],
+        ] as const
+      ).map(([pid, color, d], i) => (
+        <g key={pid}>
+          <path d={d} stroke={color} strokeWidth="1" strokeDasharray="3 3" opacity="0.22" fill="none" />
+          <circle r="3" fill={color} filter="url(#kl-gp)">
+            <animateMotion dur="1.6s" repeatCount="indefinite" begin={`${i * 0.55}s`} calcMode="linear">
+              <mpath href={`#${pid}`} />
+            </animateMotion>
+          </circle>
+        </g>
+      ))}
+
+      {/* Corner annotations */}
+      <text x="18" y="444" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">aryan.dev</text>
+      <text x="782" y="444" textAnchor="end" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">distributed-systems · databases</text>
+    </svg>
+  );
+}
+
+/* ── Red Team Orchestrator: multi-agent attack pipeline ── */
+function RedTeamOrchestratorCover() {
+  return (
+    <svg
+      viewBox="0 0 800 450"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full h-full"
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <style>{STYLE}</style>
+        <pattern id="rt-dots" width="24" height="24" patternUnits="userSpaceOnUse">
+          <circle cx="12" cy="12" r="0.7" fill="rgba(255,255,255,0.045)" />
+        </pattern>
+        <filter id="rt-gr">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="rt-gp">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="rt-gg">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <radialGradient id="rt-bg" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stopColor="#EF4444" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="#EF4444" stopOpacity="0" />
+        </radialGradient>
+        {/* Motion paths (invisible, referenced by animateMotion) */}
+        <path id="rt-p1" d="M 158 90 L 185 90" />
+        <path id="rt-p2" d="M 315 90 L 345 90" />
+        <path id="rt-p3" d="M 475 90 L 590 90" />
+        <path id="rt-p4" d="M 675 140 L 675 192 L 610 192 L 610 235" />
+        <path id="rt-p5" d="M 545 265 L 505 265" />
+        <path id="rt-p6" d="M 375 265 L 335 265" />
+        <path id="rt-p7" d="M 270 295 L 270 355" />
+      </defs>
+
+      {/* Background */}
+      <rect width="800" height="450" fill="#0F1117" />
+      <rect width="800" height="450" fill="url(#rt-dots)" />
+      <ellipse cx="420" cy="200" rx="380" ry="200" fill="url(#rt-bg)" />
+
+      {/* Header */}
+      <text x="400" y="22" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8.5" fill="#334155" letterSpacing="3">
+        RED TEAM ORCHESTRATOR · AI AGENT SECURITY TESTING
+      </text>
+
+      {/* ── ROW 1: Attack pipeline (left → right) ── */}
+
+      {/* ORCHESTRATOR */}
+      <rect x="18" y="58" width="140" height="64" rx="5" fill="#0F1117" stroke="#EF4444" strokeWidth="1.5" />
+      <rect x="18" y="58" width="140" height="64" rx="5" fill="rgba(239,68,68,0.08)" />
+      <text x="88" y="76" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">ORCHESTRATOR</text>
+      <text x="88" y="98" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="13" fontWeight="700" fill="#EF4444">Red Team</text>
+      <circle cx="149" cy="67" r="3.5" fill="#EF4444" style={{ animation: "bca-pulse 1.2s ease-in-out infinite" }} filter="url(#rt-gr)" />
+
+      {/* Trace: orch → a&e */}
+      <path d="M 158 90 L 185 90" stroke="#8B5CF6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.4" />
+
+      {/* ANALYSE & ENHANCE */}
+      <rect x="185" y="58" width="130" height="64" rx="5" fill="#0F1117" stroke="#8B5CF6" strokeWidth="1.5" />
+      <rect x="185" y="58" width="130" height="64" rx="5" fill="rgba(139,92,246,0.08)" />
+      <text x="250" y="76" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill="#475569" letterSpacing="1.5">ANALYSE + ENHANCE</text>
+      <text x="250" y="98" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="700" fill="#8B5CF6">A&E Agent</text>
+      <circle cx="306" cy="67" r="3" fill="#8B5CF6" style={{ animation: "bca-pulse 1.6s ease-in-out infinite", animationDelay: "0.3s" }} filter="url(#rt-gp)" />
+
+      {/* Trace: a&e → req builder */}
+      <path d="M 315 90 L 345 90" stroke="#3B82F6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.4" />
+
+      {/* REQUEST BUILDER */}
+      <rect x="345" y="58" width="130" height="64" rx="5" fill="#0F1117" stroke="#3B82F6" strokeWidth="1.5" />
+      <rect x="345" y="58" width="130" height="64" rx="5" fill="rgba(59,130,246,0.08)" />
+      <text x="410" y="76" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill="#475569" letterSpacing="1.5">REQUEST BUILDER</text>
+      <text x="410" y="98" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="700" fill="#3B82F6">Req Builder</text>
+      <circle cx="466" cy="67" r="3" fill="#3B82F6" style={{ animation: "bca-pulse 1.4s ease-in-out infinite", animationDelay: "0.6s" }} filter="url(#rt-gg)" />
+
+      {/* Attack trace: req → target */}
+      <path d="M 475 90 L 590 90" stroke="#EF4444" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.5" />
+
+      {/* TARGET AI AGENT (prominent, with scan rings) */}
+      <circle cx="675" cy="90" r="68" fill="none" stroke="#EF4444" strokeWidth="0.7" opacity="0.1" style={{ animation: "bca-pulse 2.4s ease-in-out infinite" }} />
+      <circle cx="675" cy="90" r="85" fill="none" stroke="#EF4444" strokeWidth="0.5" opacity="0.06" style={{ animation: "bca-pulse 2.4s ease-in-out infinite", animationDelay: "0.7s" }} />
+      <rect x="590" y="40" width="170" height="100" rx="5" fill="#0F1117" stroke="#EF4444" strokeWidth="2" />
+      <rect x="590" y="40" width="170" height="100" rx="5" fill="rgba(239,68,68,0.07)" />
+      <text x="675" y="64" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#475569" letterSpacing="2">TARGET</text>
+      <text x="675" y="86" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="13" fontWeight="700" fill="#EF4444">AI Agent</text>
+      <text x="675" y="106" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#64748B">/ MCP Server</text>
+
+      {/* L-shaped trace: target bottom → bend → parser top */}
+      <path d="M 675 140 L 675 192 L 610 192 L 610 235" stroke="#8B5CF6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.4" />
+      {/* Junction dots at L-bend */}
+      <rect x="672" y="189" width="6" height="6" rx="1" fill="#8B5CF6" opacity="0.5" />
+      <rect x="607" y="189" width="6" height="6" rx="1" fill="#8B5CF6" opacity="0.5" />
+      <text x="700" y="170" fontFamily="'Courier New',monospace" fontSize="7" fill="#334155">response</text>
+
+      {/* ── ROW 2: Analysis pipeline (right → left) ── */}
+
+      {/* RESPONSE PARSER */}
+      <rect x="545" y="235" width="130" height="60" rx="5" fill="#0F1117" stroke="#8B5CF6" strokeWidth="1.5" />
+      <rect x="545" y="235" width="130" height="60" rx="5" fill="rgba(139,92,246,0.08)" />
+      <text x="610" y="253" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill="#475569" letterSpacing="1.5">RESP PARSER</text>
+      <text x="610" y="275" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="700" fill="#8B5CF6">Parser</text>
+
+      {/* Trace: parser → validation */}
+      <path d="M 545 265 L 505 265" stroke="#10B981" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.4" />
+
+      {/* VALIDATION AGENT */}
+      <rect x="375" y="235" width="130" height="60" rx="5" fill="#0F1117" stroke="#10B981" strokeWidth="1.5" />
+      <rect x="375" y="235" width="130" height="60" rx="5" fill="rgba(16,185,129,0.08)" />
+      <text x="440" y="253" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill="#475569" letterSpacing="1.5">VALIDATION</text>
+      <text x="440" y="275" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="700" fill="#10B981">Validator</text>
+      <circle cx="496" cy="244" r="3" fill="#10B981" style={{ animation: "bca-pulse 1.8s ease-in-out infinite" }} filter="url(#rt-gg)" />
+
+      {/* Trace: validation → remediation */}
+      <path d="M 375 265 L 335 265" stroke="#10B981" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.4" />
+
+      {/* REMEDIATION AGENT */}
+      <rect x="205" y="235" width="130" height="60" rx="5" fill="#0F1117" stroke="#10B981" strokeWidth="1.5" />
+      <rect x="205" y="235" width="130" height="60" rx="5" fill="rgba(16,185,129,0.08)" />
+      <text x="270" y="253" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill="#475569" letterSpacing="1.5">REMEDIATION</text>
+      <text x="270" y="275" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="700" fill="#10B981">Remediate</text>
+
+      {/* Trace: remediation → dashboard */}
+      <path d="M 270 295 L 270 355" stroke="#3B82F6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+
+      {/* Feedback loop: validation top → curve up → orchestrator bottom */}
+      <path d="M 440 235 Q 264 148 88 122" stroke="#EF4444" strokeWidth="1" fill="none" strokeDasharray="3 4" opacity="0.2" />
+      <text x="244" y="170" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#334155" letterSpacing="1">next turn</text>
+
+      {/* ── BOTTOM ROW ── */}
+
+      {/* Budget guard badge */}
+      <rect x="18" y="355" width="148" height="52" rx="5" fill="rgba(239,68,68,0.06)" stroke="rgba(239,68,68,0.18)" strokeWidth="1" />
+      <text x="92" y="374" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">BUDGET GUARD</text>
+      <text x="92" y="395" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="11" fontWeight="700" fill="#EF4444">per-run mutex</text>
+
+      {/* Dashboard */}
+      <rect x="188" y="355" width="162" height="52" rx="5" fill="#0F1117" stroke="#3B82F6" strokeWidth="1" />
+      <rect x="188" y="355" width="162" height="52" rx="5" fill="rgba(59,130,246,0.06)" />
+      <text x="269" y="374" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">DASHBOARD</text>
+      <text x="269" y="395" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="600" fill="#3B82F6">Findings</text>
+
+      {/* Confidence badge */}
+      <rect x="530" y="355" width="240" height="52" rx="5" fill="rgba(16,185,129,0.06)" stroke="rgba(16,185,129,0.18)" strokeWidth="1" />
+      <text x="650" y="374" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">HIGH CONFIDENCE ONLY</text>
+      <text x="650" y="395" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="700" fill="#10B981">multi-turn · adaptive</text>
+
+      {/* ── ANIMATED DATA PACKETS ── */}
+      <circle r="3.5" fill="#EF4444" filter="url(#rt-gr)">
+        <animateMotion dur="0.8s" repeatCount="indefinite" begin="0s" calcMode="linear"><mpath href="#rt-p1" /></animateMotion>
+      </circle>
+      <circle r="3.5" fill="#8B5CF6" filter="url(#rt-gp)">
+        <animateMotion dur="0.8s" repeatCount="indefinite" begin="0.4s" calcMode="linear"><mpath href="#rt-p2" /></animateMotion>
+      </circle>
+      <circle r="3.5" fill="#3B82F6" filter="url(#rt-gg)">
+        <animateMotion dur="1.6s" repeatCount="indefinite" begin="0.8s" calcMode="linear"><mpath href="#rt-p3" /></animateMotion>
+      </circle>
+      {[0, 0.7].map((delay) => (
+        <circle key={delay} r="3.5" fill="#EF4444" filter="url(#rt-gr)">
+          <animateMotion dur="1.6s" repeatCount="indefinite" begin={`${1.2 + delay}s`} calcMode="linear"><mpath href="#rt-p4" /></animateMotion>
+        </circle>
+      ))}
+      <circle r="3.5" fill="#8B5CF6" filter="url(#rt-gp)">
+        <animateMotion dur="0.7s" repeatCount="indefinite" begin="1.8s" calcMode="linear"><mpath href="#rt-p5" /></animateMotion>
+      </circle>
+      <circle r="3.5" fill="#10B981" filter="url(#rt-gg)">
+        <animateMotion dur="0.7s" repeatCount="indefinite" begin="2.2s" calcMode="linear"><mpath href="#rt-p6" /></animateMotion>
+      </circle>
+      <circle r="3" fill="#3B82F6" filter="url(#rt-gg)">
+        <animateMotion dur="1.0s" repeatCount="indefinite" begin="2.6s" calcMode="linear"><mpath href="#rt-p7" /></animateMotion>
+      </circle>
+
+      {/* Corner annotations */}
+      <text x="18" y="444" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">aryan.dev</text>
+      <text x="782" y="444" textAnchor="end" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">security · ai-infrastructure</text>
+    </svg>
+  );
+}
+
+/* ── Generic tag cover (fallback) ──────────────────────── */
+function GenericCover({ tags }: { tags: string[] }) {
+  const primary = tags[0] ?? "distributed-systems";
+  const colorMap: Record<string, string> = {
+    "distributed-systems": "#8B5CF6",
+    "ai-infrastructure": "#3B82F6",
+    databases: "#10B981",
+    observability: "#F59E0B",
+    security: "#EF4444",
+  };
+  const color = colorMap[primary] ?? "#3B82F6";
+
+  return (
+    <svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <style>{STYLE}</style>
+        <pattern id="gen-dots" width="24" height="24" patternUnits="userSpaceOnUse">
+          <circle cx="12" cy="12" r="0.7" fill="rgba(255,255,255,0.045)" />
+        </pattern>
+        <radialGradient id="gen-bg" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stopColor={color} stopOpacity="0.08" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="800" height="450" fill="#0F1117" />
+      <rect width="800" height="450" fill="url(#gen-dots)" />
+      <ellipse cx="400" cy="225" rx="360" ry="200" fill="url(#gen-bg)" />
+
+      {/* Large faint tag label */}
+      <text x="400" y="240" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="48" fontWeight="700"
+        fill={color} opacity="0.12">{primary.toUpperCase()}</text>
+
+      {/* Center ring */}
+      <circle cx="400" cy="225" r="60" fill="none" stroke={color} strokeWidth="1" opacity="0.15" />
+      <circle cx="400" cy="225" r="40" fill="none" stroke={color} strokeWidth="1" opacity="0.1" />
+      <circle cx="400" cy="225" r="20" fill={`${color}22`} stroke={color} strokeWidth="1.5" opacity="0.5"
+        style={{ animation: "bca-pulse 2.5s ease-in-out infinite" }} />
+
+      {/* Tag label */}
+      <text x="400" y="338" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="11" fill={color} opacity="0.7" letterSpacing="3">
+        {primary.replace(/-/g, " ").toUpperCase()}
+      </text>
+    </svg>
+  );
+}
+
+/* ── Public API ─────────────────────────────────────────── */
+interface BlogCoverArtProps {
+  slug: string;
+  tags: string[];
+  className?: string;
+}
+
+const SLUG_MAP: Record<string, React.FC> = {
+  boostingTesting: BoostingTestingCover,
+  kafka: KafkaLogCover,
+  redTeamingOchestrator: RedTeamOrchestratorCover,
+};
+
+export default function BlogCoverArt({ slug, tags, className = "" }: BlogCoverArtProps) {
+  const Cover = SLUG_MAP[slug];
+  if (Cover) return <div className={`w-full h-full ${className}`}><Cover /></div>;
+  return <div className={`w-full h-full ${className}`}><GenericCover tags={tags} /></div>;
+}

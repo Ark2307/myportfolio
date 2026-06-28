@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { PostMeta } from "@/lib/mdx";
+import BlogCoverArt from "@/components/blog/BlogCoverArt";
 
 const TAG_COLORS: Record<string, string> = {
   "distributed-systems": "var(--tag-distributed)",
@@ -32,13 +33,8 @@ export default function BlogCard({ post, scrollPercent, isRead }: BlogCardProps)
             sizes="(max-width: 768px) 100vw, 50vw"
           />
         ) : (
-          <div
-            className="absolute inset-0 blueprint-grid flex items-center justify-center"
-            style={{ background: "var(--surface-2)" }}
-          >
-            <span className="font-mono text-xs opacity-30 uppercase tracking-widest" style={{ color: "var(--accent)" }}>
-              {post.tags[0] ?? "NOTE"}
-            </span>
+          <div className="absolute inset-0 overflow-hidden">
+            <BlogCoverArt slug={post.slug} tags={post.tags} className="transition-transform duration-500 group-hover:scale-105" />
           </div>
         )}
         {isRead && (
