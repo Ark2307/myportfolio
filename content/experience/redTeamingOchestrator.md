@@ -1,3 +1,10 @@
+---
+title: "I Built a Red Team Orchestrator for AI Agents. Here's What Actually Made It Hard."
+date: "2026-06-10"
+tags: ["security", "ai-infrastructure"]
+excerpt: "How I built a multi-agent orchestration pipeline to automatically red-team any AI agent or MCP server — and what surprised me along the way."
+---
+
 # I Built a Red Team Orchestrator for AI Agents. Here's What Actually Made It Hard.
 
 There's a version of this article that opens with something like: *"As AI adoption grows, security becomes increasingly important."* I'm not writing that one.

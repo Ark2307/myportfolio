@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import type { PostMeta } from "@/lib/mdx";
 import { getAllPostStats } from "@/lib/db";
 import SectionLabel from "@/components/ui/SectionLabel";
+import BlogCoverArt from "@/components/blog/BlogCoverArt";
 
 const TAG_COLORS: Record<string, string> = {
   "distributed-systems": "var(--tag-distributed)",
@@ -78,7 +79,9 @@ export default function LatestNotes({ posts }: LatestNotesProps) {
                         sizes="(max-width: 768px) 100vw, 33vw"
                       />
                     ) : (
-                      <BlueprintPlaceholder tag={post.tags[0]} />
+                      <div className="absolute inset-0">
+                        <BlogCoverArt slug={post.slug} tags={post.tags} />
+                      </div>
                     )}
                     {isRead && (
                       <span
@@ -164,18 +167,3 @@ export default function LatestNotes({ posts }: LatestNotesProps) {
   );
 }
 
-function BlueprintPlaceholder({ tag }: { tag?: string }) {
-  return (
-    <div
-      className="absolute inset-0 flex items-center justify-center blueprint-grid"
-      style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
-    >
-      <span
-        className="font-mono text-xs font-bold tracking-widest uppercase opacity-30"
-        style={{ color: "var(--accent)" }}
-      >
-        {tag ?? "NOTE"}
-      </span>
-    </div>
-  );
-}

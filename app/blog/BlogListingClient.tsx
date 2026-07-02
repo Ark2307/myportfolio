@@ -5,6 +5,7 @@ import { getAllPostStats } from "@/lib/db";
 import type { PostMeta } from "@/lib/mdx";
 import BlogCard from "@/components/blog/BlogCard";
 import SectionLabel from "@/components/ui/SectionLabel";
+import Link from "next/link";
 
 const TAG_LABELS: Record<string, string> = {
   "distributed-systems": "Distributed Systems",
@@ -98,6 +99,17 @@ export default function BlogListingClient({ posts, initialTag }: BlogListingClie
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-16">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-xs font-medium transition-colors mb-10"
+          style={{
+            background: "var(--surface-2)",
+            color: "var(--text-muted)",
+            border: "1px solid var(--border)",
+          }}
+        >
+          ← Home
+        </Link>
         <SectionLabel label="Architecture Notes" />
         <h1
           className="text-4xl font-bold mb-3"

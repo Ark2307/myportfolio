@@ -48,20 +48,22 @@ export default function BlogPostClient({ post, suggestions }: BlogPostClientProp
       <ReadingProgress postId={post.slug} initialPercent={initialPercent} />
 
       <article style={{ background: "var(--bg)" }}>
-        {/* Hero cover */}
-        <div className="w-full overflow-hidden" style={{ maxHeight: 420, aspectRatio: "800/450" }}>
-          {post.coverImage ? (
-            <Image
-              src={post.coverImage}
-              alt={post.title}
-              width={1200}
-              height={480}
-              className="w-full h-full object-cover"
-              priority
-            />
-          ) : (
-            <BlogCoverArt slug={post.slug} tags={post.tags} className="h-full" />
-          )}
+        {/* Hero cover — constrained to SVG native ratio so it never crops */}
+        <div className="w-full overflow-hidden" style={{ background: "#0F1117" }}>
+          <div className="mx-auto" style={{ maxWidth: 800, aspectRatio: "800/450", maxHeight: 420 }}>
+            {post.coverImage ? (
+              <Image
+                src={post.coverImage}
+                alt={post.title}
+                width={800}
+                height={450}
+                className="w-full h-full object-cover"
+                priority
+              />
+            ) : (
+              <BlogCoverArt slug={post.slug} tags={post.tags} className="h-full" />
+            )}
+          </div>
         </div>
 
         {/* Article header */}
@@ -70,13 +72,21 @@ export default function BlogPostClient({ post, suggestions }: BlogPostClientProp
           style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)" }}
         >
           <div className="max-w-3xl mx-auto">
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-2 mb-4 font-mono text-xs" style={{ color: "var(--text-muted)" }}>
-              <Link href="/blog" className="hover:underline" style={{ color: "var(--accent)" }}>
-                ← Notes
+            {/* Back button + breadcrumb */}
+            <div className="flex items-center gap-3 mb-4">
+              <Link
+                href="/blog"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-xs font-medium transition-colors"
+                style={{
+                  background: "var(--surface-2)",
+                  color: "var(--text-muted)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                ← Back
               </Link>
-              <span>/</span>
-              <span>{post.slug}</span>
+              <span className="font-mono text-xs" style={{ color: "var(--border-strong)" }}>/</span>
+              <span className="font-mono text-xs" style={{ color: "var(--text-muted)" }}>{post.slug}</span>
             </div>
 
             {/* Tags */}
