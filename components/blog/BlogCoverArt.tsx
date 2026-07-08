@@ -492,6 +492,159 @@ function RedTeamOrchestratorCover() {
   );
 }
 
+/* ── Code Analysis Agent: hybrid static+semantic+LLM ──── */
+function CodeAnalysisAgentCover() {
+  return (
+    <svg
+      viewBox="0 0 800 450"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full h-full"
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <style>{STYLE}</style>
+        <pattern id="ca-dots" width="24" height="24" patternUnits="userSpaceOnUse">
+          <circle cx="12" cy="12" r="0.7" fill="rgba(255,255,255,0.045)" />
+        </pattern>
+        <filter id="ca-gb">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="ca-gp">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="ca-gg">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <radialGradient id="ca-bg" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+        </radialGradient>
+        {/* Motion paths */}
+        <path id="ca-p1" d="M 125 120 L 270 170" />
+        <path id="ca-p2" d="M 400 120 L 400 170" />
+        <path id="ca-p3" d="M 675 120 L 530 170" />
+        <path id="ca-p4" d="M 400 245 L 400 280" />
+        <path id="ca-loop" d="M 575 312 C 680 312 680 207 610 207" />
+      </defs>
+
+      {/* Background */}
+      <rect width="800" height="450" fill="#0F1117" />
+      <rect width="800" height="450" fill="url(#ca-dots)" />
+      <ellipse cx="400" cy="220" rx="380" ry="210" fill="url(#ca-bg)" />
+
+      {/* Header */}
+      <text x="400" y="22" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8.5" fill="#334155" letterSpacing="3">
+        AI CODE ANALYSIS · STATIC + SEMANTIC + LLM HYBRID
+      </text>
+
+      {/* ── THREE SYSTEM BOXES ── */}
+
+      {/* STATIC ANALYSIS (blue) */}
+      <rect x="30" y="36" width="190" height="84" rx="5" fill="#0F1117" stroke="#3B82F6" strokeWidth="1.5" />
+      <rect x="30" y="36" width="190" height="84" rx="5" fill="rgba(59,130,246,0.08)" />
+      <text x="125" y="56" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#475569" letterSpacing="2">STATIC ANALYSIS</text>
+      <text x="125" y="84" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="15" fontWeight="700" fill="#3B82F6">Structural</text>
+      <text x="125" y="107" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#64748B">call-graph · taint · CPG</text>
+      <circle cx="211" cy="45" r="3.5" fill="#3B82F6" style={{ animation: "bca-pulse 1.3s ease-in-out infinite" }} filter="url(#ca-gb)" />
+
+      {/* SEMANTIC SEARCH (purple) */}
+      <rect x="305" y="36" width="190" height="84" rx="5" fill="#0F1117" stroke="#8B5CF6" strokeWidth="1.5" />
+      <rect x="305" y="36" width="190" height="84" rx="5" fill="rgba(139,92,246,0.08)" />
+      <text x="400" y="56" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#475569" letterSpacing="2">SEMANTIC SEARCH</text>
+      <text x="400" y="84" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="15" fontWeight="700" fill="#8B5CF6">Retrieval</text>
+      <text x="400" y="107" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#64748B">vector embeddings · similarity</text>
+      <circle cx="486" cy="45" r="3.5" fill="#8B5CF6" style={{ animation: "bca-pulse 1.7s ease-in-out infinite", animationDelay: "0.4s" }} filter="url(#ca-gp)" />
+
+      {/* LLM REASONING (green) */}
+      <rect x="580" y="36" width="190" height="84" rx="5" fill="#0F1117" stroke="#10B981" strokeWidth="1.5" />
+      <rect x="580" y="36" width="190" height="84" rx="5" fill="rgba(16,185,129,0.08)" />
+      <text x="675" y="56" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#475569" letterSpacing="2">LLM REASONING</text>
+      <text x="675" y="84" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="15" fontWeight="700" fill="#10B981">Inference</text>
+      <text x="675" y="107" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#64748B">evidence → judgement</text>
+      <circle cx="761" cy="45" r="3.5" fill="#10B981" style={{ animation: "bca-pulse 2.1s ease-in-out infinite", animationDelay: "0.8s" }} filter="url(#ca-gg)" />
+
+      {/* ── CONVERGENCE TRACES ── */}
+      <path d="M 125 120 L 270 170" stroke="#3B82F6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+      <path d="M 400 120 L 400 170" stroke="#8B5CF6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+      <path d="M 675 120 L 530 170" stroke="#10B981" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+
+      {/* ── EXECUTION PATH BOX ── */}
+      <rect x="190" y="170" width="420" height="75" rx="5" fill="#0F1117" stroke="#3B82F6" strokeWidth="2" />
+      <rect x="190" y="170" width="420" height="75" rx="5" fill="rgba(59,130,246,0.07)" />
+      <text x="400" y="191" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#475569" letterSpacing="2">EXECUTION PATH · EVIDENCE COLLECTOR</text>
+      <text x="400" y="215" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="14" fontWeight="700" fill="#3B82F6">Exec Path Builder</text>
+      {/* Three input type labels inside */}
+      <text x="268" y="234" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#3B82F6" opacity="0.65">structural</text>
+      <text x="400" y="234" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#8B5CF6" opacity="0.65">retrieval</text>
+      <text x="532" y="234" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#10B981" opacity="0.65">inference</text>
+      <path d="M 334 228 L 334 238" stroke="#475569" strokeWidth="0.5" opacity="0.4" />
+      <path d="M 466 228 L 466 238" stroke="#475569" strokeWidth="0.5" opacity="0.4" />
+      <circle cx="600" cy="183" r="3" fill="#3B82F6" style={{ animation: "bca-pulse 1.5s ease-in-out infinite" }} filter="url(#ca-gb)" />
+
+      {/* ── TRACE: EXEC → VULN ── */}
+      <path d="M 400 245 L 400 280" stroke="#8B5CF6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.4" />
+
+      {/* ── VULNERABILITY ANALYSIS BOX ── */}
+      <rect x="225" y="280" width="350" height="65" rx="5" fill="#0F1117" stroke="#8B5CF6" strokeWidth="1.5" />
+      <rect x="225" y="280" width="350" height="65" rx="5" fill="rgba(139,92,246,0.07)" />
+      <text x="400" y="301" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#475569" letterSpacing="2">VULNERABILITY ANALYSIS</text>
+      <text x="400" y="325" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="14" fontWeight="700" fill="#8B5CF6">Vuln Analysis Agent</text>
+      <circle cx="565" cy="290" r="3" fill="#8B5CF6" style={{ animation: "bca-pulse 2s ease-in-out infinite", animationDelay: "0.6s" }} filter="url(#ca-gp)" />
+
+      {/* ── ITERATIVE AGENT LOOP (feedback arc, right side) ── */}
+      <path d="M 575 312 C 680 312 680 207 610 207" stroke="#F59E0B" strokeWidth="1" fill="none" strokeDasharray="3 4" opacity="0.35" />
+      <text x="710" y="255" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#F59E0B" opacity="0.55" letterSpacing="1">re-plan</text>
+      <text x="710" y="265" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#F59E0B" opacity="0.55">→</text>
+
+      {/* ── RESULT METRIC BANNER ── */}
+      <rect x="200" y="368" width="400" height="50" rx="6" fill="rgba(16,185,129,0.07)" stroke="rgba(16,185,129,0.2)" strokeWidth="1" />
+      <text x="400" y="385" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#475569" letterSpacing="3">RESULT</text>
+      <text x="400" y="406" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="14" fontWeight="700" fill="#10B981">70% more findings · 0 false positives</text>
+
+      {/* ── ANIMATED DATA PACKETS ── */}
+      {/* Static Analysis → Execution Path */}
+      <circle r="4" fill="#3B82F6" filter="url(#ca-gb)">
+        <animateMotion dur="1.4s" repeatCount="indefinite" begin="0s" calcMode="linear">
+          <mpath href="#ca-p1" />
+        </animateMotion>
+      </circle>
+      {/* Semantic Search → Execution Path */}
+      <circle r="4" fill="#8B5CF6" filter="url(#ca-gp)">
+        <animateMotion dur="1.2s" repeatCount="indefinite" begin="0.5s" calcMode="linear">
+          <mpath href="#ca-p2" />
+        </animateMotion>
+      </circle>
+      {/* LLM Reasoning → Execution Path */}
+      <circle r="4" fill="#10B981" filter="url(#ca-gg)">
+        <animateMotion dur="1.4s" repeatCount="indefinite" begin="1.0s" calcMode="linear">
+          <mpath href="#ca-p3" />
+        </animateMotion>
+      </circle>
+      {/* Execution Path → Vuln Analysis */}
+      {([0, 0.8] as const).map((delay) => (
+        <circle key={delay} r="4" fill="#3B82F6" filter="url(#ca-gb)">
+          <animateMotion dur="0.9s" repeatCount="indefinite" begin={`${1.5 + delay}s`} calcMode="linear">
+            <mpath href="#ca-p4" />
+          </animateMotion>
+        </circle>
+      ))}
+      {/* Re-plan feedback loop packet (amber) */}
+      <circle r="3" fill="#F59E0B">
+        <animateMotion dur="2s" repeatCount="indefinite" begin="2.5s" calcMode="paced">
+          <mpath href="#ca-loop" />
+        </animateMotion>
+      </circle>
+
+      {/* Corner annotations */}
+      <text x="18" y="444" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">aryan.dev</text>
+      <text x="782" y="444" textAnchor="end" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">security · ai-infrastructure</text>
+    </svg>
+  );
+}
+
 /* ── Generic tag cover (fallback) ──────────────────────── */
 function GenericCover({ tags }: { tags: string[] }) {
   const primary = tags[0] ?? "distributed-systems";
@@ -549,6 +702,7 @@ const SLUG_MAP: Record<string, React.FC> = {
   boostingTesting: BoostingTestingCover,
   kafka: KafkaLogCover,
   redTeamingOchestrator: RedTeamOrchestratorCover,
+  CodeAnalysisAgent: CodeAnalysisAgentCover,
 };
 
 export default function BlogCoverArt({ slug, tags, className = "" }: BlogCoverArtProps) {
