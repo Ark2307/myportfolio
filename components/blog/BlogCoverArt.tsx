@@ -645,6 +645,172 @@ function CodeAnalysisAgentCover() {
   );
 }
 
+/* ── Swagger Parser Agent: API dependency graph workflow – */
+function SwaggerParserAgentCover() {
+  return (
+    <svg
+      viewBox="0 0 800 450"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full h-full"
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <style>{STYLE}</style>
+        <pattern id="sp-dots" width="24" height="24" patternUnits="userSpaceOnUse">
+          <circle cx="12" cy="12" r="0.7" fill="rgba(255,255,255,0.045)" />
+        </pattern>
+        <filter id="sp-gb">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="sp-gp">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="sp-gg">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="sp-go">
+          <feGaussianBlur stdDeviation="2.5" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <radialGradient id="sp-bg" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+        </radialGradient>
+        {/* Motion paths: Row1 chain (left → right), then down into Row2 */}
+        <path id="sp-p1" d="M 175 102 L 225 102" />
+        <path id="sp-p2" d="M 375 102 L 425 102" />
+        <path id="sp-p3" d="M 575 102 L 625 102" />
+        <path id="sp-p4" d="M 500 134 L 500 210" />
+        <path id="sp-p5" d="M 700 134 L 700 210" />
+        <path id="sp-p6" d="M 575 242 L 625 242" />
+      </defs>
+
+      {/* Background */}
+      <rect width="800" height="450" fill="#0F1117" />
+      <rect width="800" height="450" fill="url(#sp-dots)" />
+      <ellipse cx="400" cy="220" rx="380" ry="210" fill="url(#sp-bg)" />
+
+      {/* Header */}
+      <text x="400" y="22" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8.5" fill="#334155" letterSpacing="3">
+        OPENAPI DEPENDENCY GRAPH · WORKFLOW EXECUTION
+      </text>
+
+      {/* ── ROW 1: Spec → Root → Dependency chain ── */}
+
+      {/* OPENAPI SPEC */}
+      <rect x="25" y="70" width="150" height="64" rx="5" fill="#0F1117" stroke="#3B82F6" strokeWidth="1.5" />
+      <rect x="25" y="70" width="150" height="64" rx="5" fill="rgba(59,130,246,0.07)" />
+      <text x="100" y="90" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">OPENAPI SPEC</text>
+      <text x="100" y="112" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="13" fontWeight="700" fill="#3B82F6">Swagger</text>
+      <circle cx="166" cy="79" r="3.5" fill="#3B82F6" style={{ animation: "bca-pulse 1.2s ease-in-out infinite" }} filter="url(#sp-gb)" />
+
+      {/* ROOT API */}
+      <rect x="225" y="70" width="150" height="64" rx="5" fill="#0F1117" stroke="#8B5CF6" strokeWidth="1.5" />
+      <rect x="225" y="70" width="150" height="64" rx="5" fill="rgba(139,92,246,0.08)" />
+      <text x="300" y="90" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">ROOT API</text>
+      <text x="300" y="112" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="700" fill="#8B5CF6">POST /users</text>
+      <circle cx="366" cy="79" r="3" fill="#8B5CF6" style={{ animation: "bca-pulse 1.8s ease-in-out infinite", animationDelay: "0.3s" }} filter="url(#sp-gp)" />
+
+      {/* DEPENDS ON (GET /users/{id}) */}
+      <rect x="425" y="70" width="150" height="64" rx="5" fill="#0F1117" stroke="#3B82F6" strokeWidth="1.5" />
+      <rect x="425" y="70" width="150" height="64" rx="5" fill="rgba(59,130,246,0.08)" />
+      <text x="500" y="90" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">DEPENDS ON</text>
+      <text x="500" y="112" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="11" fontWeight="700" fill="#3B82F6">GET /users/{'{id}'}</text>
+      <circle cx="566" cy="79" r="3" fill="#3B82F6" style={{ animation: "bca-pulse 1.5s ease-in-out infinite", animationDelay: "0.6s" }} filter="url(#sp-gb)" />
+
+      {/* DEPENDENT (POST /projects) */}
+      <rect x="625" y="70" width="150" height="64" rx="5" fill="#0F1117" stroke="#8B5CF6" strokeWidth="1.5" />
+      <rect x="625" y="70" width="150" height="64" rx="5" fill="rgba(139,92,246,0.08)" />
+      <text x="700" y="90" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">DEPENDENT</text>
+      <text x="700" y="112" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="700" fill="#8B5CF6">POST /projects</text>
+      <circle cx="766" cy="79" r="3" fill="#8B5CF6" style={{ animation: "bca-pulse 2s ease-in-out infinite", animationDelay: "0.9s" }} filter="url(#sp-gp)" />
+
+      {/* Row 1 traces */}
+      <path d="M 175 102 L 225 102" stroke="#8B5CF6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+      <path d="M 375 102 L 425 102" stroke="#3B82F6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+      <path d="M 575 102 L 625 102" stroke="#8B5CF6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+
+      {/* Vertical traces: Row1 → Row2 */}
+      <path d="M 500 134 L 500 210" stroke="#F59E0B" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+      <path d="M 700 134 L 700 210" stroke="#10B981" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+
+      {/* ── ROW 2: Param cache → Success ── */}
+
+      {/* PARAM CACHE */}
+      <rect x="425" y="210" width="150" height="64" rx="5" fill="#0F1117" stroke="#F59E0B" strokeWidth="1.5" />
+      <rect x="425" y="210" width="150" height="64" rx="5" fill="rgba(245,158,11,0.07)" />
+      <text x="500" y="230" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">PARAM CACHE</text>
+      <text x="500" y="252" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="11" fontWeight="700" fill="#F59E0B">userId, id...</text>
+      <circle cx="566" cy="219" r="3" fill="#F59E0B" style={{ animation: "bca-pulse 1.4s ease-in-out infinite" }} filter="url(#sp-go)" />
+
+      {/* SUCCESS */}
+      <rect x="625" y="210" width="150" height="64" rx="5" fill="#0F1117" stroke="#10B981" strokeWidth="1.5" />
+      <rect x="625" y="210" width="150" height="64" rx="5" fill="rgba(16,185,129,0.08)" />
+      <text x="700" y="230" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">SUCCESS</text>
+      <text x="700" y="252" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="13" fontWeight="700" fill="#10B981">Resolved</text>
+      <circle cx="766" cy="219" r="3" fill="#10B981" style={{ animation: "bca-pulse 1.8s ease-in-out infinite", animationDelay: "0.4s" }} filter="url(#sp-gg)" />
+
+      {/* Trace: Cache → Success */}
+      <path d="M 575 242 L 625 242" stroke="#10B981" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+
+      {/* ── AI RECOVERY BADGE ── */}
+      <rect x="200" y="300" width="400" height="48" rx="5" fill="rgba(59,130,246,0.06)" stroke="rgba(59,130,246,0.18)" strokeWidth="1" />
+      <text x="400" y="319" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">AI-ASSISTED RECOVERY FOR EDGE CASES</text>
+      <text x="400" y="339" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="11" fontWeight="700" fill="#3B82F6">When deterministic logic reaches limits</text>
+
+      {/* ── RESULT METRIC BANNER ── */}
+      <rect x="190" y="368" width="420" height="46" rx="6" fill="rgba(16,185,129,0.07)" stroke="rgba(16,185,129,0.2)" strokeWidth="1" />
+      <text x="400" y="385" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#475569" letterSpacing="3">COVERAGE</text>
+      <text x="400" y="405" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="14" fontWeight="700" fill="#10B981">10% → 60% successful API execution</text>
+
+      {/* ── ANIMATED DATA PACKETS ── */}
+      {/* Spec → Root */}
+      <circle r="4" fill="#3B82F6" filter="url(#sp-gb)">
+        <animateMotion dur="0.8s" repeatCount="indefinite" begin="0s" calcMode="linear">
+          <mpath href="#sp-p1" />
+        </animateMotion>
+      </circle>
+      {/* Root → Depends On */}
+      <circle r="4" fill="#8B5CF6" filter="url(#sp-gp)">
+        <animateMotion dur="0.8s" repeatCount="indefinite" begin="0.5s" calcMode="linear">
+          <mpath href="#sp-p2" />
+        </animateMotion>
+      </circle>
+      {/* Depends On → Dependent */}
+      <circle r="4" fill="#3B82F6" filter="url(#sp-gb)">
+        <animateMotion dur="0.8s" repeatCount="indefinite" begin="1.0s" calcMode="linear">
+          <mpath href="#sp-p3" />
+        </animateMotion>
+      </circle>
+      {/* Depends On → Param Cache */}
+      <circle r="3.5" fill="#F59E0B" filter="url(#sp-go)">
+        <animateMotion dur="1s" repeatCount="indefinite" begin="1.5s" calcMode="linear">
+          <mpath href="#sp-p4" />
+        </animateMotion>
+      </circle>
+      {/* Dependent → Success */}
+      <circle r="4" fill="#10B981" filter="url(#sp-gg)">
+        <animateMotion dur="1s" repeatCount="indefinite" begin="1.5s" calcMode="linear">
+          <mpath href="#sp-p5" />
+        </animateMotion>
+      </circle>
+      {/* Cache → Success */}
+      <circle r="4" fill="#10B981" filter="url(#sp-gg)">
+        <animateMotion dur="0.8s" repeatCount="indefinite" begin="2.2s" calcMode="linear">
+          <mpath href="#sp-p6" />
+        </animateMotion>
+      </circle>
+
+      {/* Corner annotations */}
+      <text x="18" y="444" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">aryan.dev</text>
+      <text x="782" y="444" textAnchor="end" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">api-design · ai-infrastructure</text>
+    </svg>
+  );
+}
+
 /* ── Generic tag cover (fallback) ──────────────────────── */
 function GenericCover({ tags }: { tags: string[] }) {
   const primary = tags[0] ?? "distributed-systems";
@@ -703,6 +869,7 @@ const SLUG_MAP: Record<string, React.FC> = {
   kafka: KafkaLogCover,
   redTeamingOchestrator: RedTeamOrchestratorCover,
   CodeAnalysisAgent: CodeAnalysisAgentCover,
+  SwaggerParserAgent: SwaggerParserAgentCover,
 };
 
 export default function BlogCoverArt({ slug, tags, className = "" }: BlogCoverArtProps) {

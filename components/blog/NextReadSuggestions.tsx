@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { PostMeta } from "@/lib/mdx";
 import SectionLabel from "@/components/ui/SectionLabel";
+import BlogCoverArt from "@/components/blog/BlogCoverArt";
 
 interface NextReadSuggestionsProps {
   suggestions: PostMeta[];
@@ -42,13 +43,8 @@ export default function NextReadSuggestions({ suggestions }: NextReadSuggestions
                   sizes="(max-width: 640px) 100vw, 33vw"
                 />
               ) : (
-                <div
-                  className="absolute inset-0 blueprint-grid flex items-center justify-center"
-                  style={{ background: "var(--surface-2)" }}
-                >
-                  <span className="font-mono text-xs opacity-30" style={{ color: "var(--accent)" }}>
-                    {post.tags[0]}
-                  </span>
+                <div className="absolute inset-0 overflow-hidden">
+                  <BlogCoverArt slug={post.slug} tags={post.tags} className="transition-transform duration-500 group-hover:scale-105" />
                 </div>
               )}
             </div>
