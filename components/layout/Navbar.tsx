@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GitBranch, Menu, X, Command, Mail } from "lucide-react";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -120,9 +121,12 @@ export default function Navbar() {
               <span style={{ color: "var(--status-green)" }}>available</span>
             </div>
 
+            {/* Theme toggle */}
+            <ThemeToggle />
+
             {/* Email */}
             <a
-              href="mailto:aryan@akto.io"
+              href="mailto:kr.aryan2307@gmail.com"
               className="p-1.5 rounded-lg transition-colors hover:opacity-80"
               style={{ color: "var(--text-muted)" }}
               aria-label="Email"
@@ -178,7 +182,7 @@ export default function Navbar() {
                     href={href}
                     className="flex items-center px-4 py-3 rounded-xl text-sm font-medium"
                     style={{
-                      color: active ? "var(--accent)" : "var(--text)",
+                      color: active ? "var(--accent-text)" : "var(--text)",
                       background: active ? "var(--accent-dim)" : "transparent",
                     }}
                   >
@@ -187,8 +191,16 @@ export default function Navbar() {
                 );
               })}
               <div className="h-px my-1" style={{ background: "var(--border)" }} />
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                  Theme
+                </span>
+                <div className="rounded-lg" style={{ border: "1px solid var(--border)" }}>
+                  <ThemeToggle />
+                </div>
+              </div>
               <a
-                href="mailto:aryan@akto.io"
+                href="mailto:kr.aryan2307@gmail.com"
                 className="flex items-center gap-2.5 px-4 py-3 rounded-xl text-sm font-mono"
                 style={{ color: "var(--text-muted)" }}
               >

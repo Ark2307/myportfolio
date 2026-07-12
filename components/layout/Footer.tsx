@@ -31,7 +31,6 @@ export default function Footer() {
               {[
                 { href: "/", label: "Home" },
                 { href: "/blog", label: "Architecture Notes" },
-                { href: "/#projects", label: "Projects" },
                 { href: "/#about", label: "About" },
               ].map(({ href, label }) => (
                 <li key={href}>
@@ -87,7 +86,7 @@ export default function Footer() {
               GitHub
             </a>
             <a
-              href="mailto:aryan@akto.io"
+              href="mailto:kr.aryan2307@gmail.com"
               className="font-mono text-xs transition-colors hover:underline"
               style={{ color: "var(--text-muted)" }}
             >

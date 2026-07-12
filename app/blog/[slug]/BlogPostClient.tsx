@@ -96,8 +96,8 @@ export default function BlogPostClient({ post, suggestions }: BlogPostClientProp
                   key={tag}
                   className="tag"
                   style={{
-                    background: `${TAG_COLORS[tag] ?? "var(--accent)"}1a`,
-                    color: TAG_COLORS[tag] ?? "var(--accent)",
+                    background: `${TAG_COLORS[tag] ?? "var(--accent-text)"}1a`,
+                    color: TAG_COLORS[tag] ?? "var(--accent-text)",
                   }}
                 >
                   {tag}
@@ -127,7 +127,7 @@ export default function BlogPostClient({ post, suggestions }: BlogPostClientProp
               {minutesLeft > 0 && activeSeconds > 30 && (
                 <>
                   <span>·</span>
-                  <span style={{ color: "var(--accent)" }}>~{minutesLeft} min left</span>
+                  <span style={{ color: "var(--accent-text)" }}>~{minutesLeft} min left</span>
                 </>
               )}
             </div>

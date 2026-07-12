@@ -40,7 +40,7 @@ export default function ReadingPrompt({ postId, suggestions }: ReadingPromptProp
             className="flex items-center justify-between px-4 py-3"
             style={{ borderBottom: "1px solid var(--border)" }}
           >
-            <span className="font-mono text-xs font-medium" style={{ color: "var(--accent)" }}>
+            <span className="font-mono text-xs font-medium" style={{ color: "var(--accent-text)" }}>
               {promptType === "rating" ? "// ENJOYING_THIS?" : "// SIMILAR_READS"}
             </span>
             <button
@@ -116,7 +116,7 @@ export default function ReadingPrompt({ postId, suggestions }: ReadingPromptProp
                     className="block p-3 rounded-lg transition-colors"
                     style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
                   >
-                    <div className="text-xs font-mono mb-1" style={{ color: "var(--accent)" }}>
+                    <div className="text-xs font-mono mb-1" style={{ color: "var(--accent-text)" }}>
                       {post.tags[0]}
                     </div>
                     <div className="text-sm font-medium line-clamp-2" style={{ color: "var(--text)" }}>

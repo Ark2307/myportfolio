@@ -1,7 +1,13 @@
 @import "tailwindcss";
 
 /* ─── Design tokens ─────────────────────────────────────── */
-:root {
+/* Theme is controlled entirely by the `data-theme` attribute on <html>,
+   set pre-hydration by the inline script in app/layout.tsx (no FOUC) and
+   toggled at runtime by hooks/useTheme.ts. Light is the attribute-less
+   default so the site still renders correctly with JS disabled. */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
   /* Light mode */
   --bg: #F7F8FA;
   --surface: #FFFFFF;
@@ -9,6 +15,10 @@
   --text: #1E293B;
   --text-muted: #64748B;
   --accent: #3B82F6;
+  /* #3B82F6 fails WCAG AA (~3.7:1) for text on white/near-white — use this
+     deeper shade whenever accent color lands on TEXT (labels, links, tags)
+     in light mode. Borders/fills/icons keep --accent. */
+  --accent-text: #2563EB;
   --accent-dim: rgba(59, 130, 246, 0.12);
   --border: rgba(30, 41, 59, 0.10);
   --border-strong: rgba(30, 41, 59, 0.18);
@@ -17,6 +27,10 @@
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.04);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
   --shadow-lg: 0 12px 32px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+  /* Cursor spotlight — light mode needs more presence since blue-on-white
+     washes out faster than blue-on-dark at the same opacity. */
+  --spotlight-inner: rgba(37, 99, 235, 0.10);
+  --spotlight-mid: rgba(37, 99, 235, 0.045);
   /* Status colors */
   --status-green: #10B981;
   --status-amber: #F59E0B;
@@ -30,23 +44,25 @@
   --tag-security: #EF4444;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0F1117;
-    --surface: #1A1D27;
-    --surface-2: #222636;
-    --text: #E2E8F0;
-    --text-muted: #94A3B8;
-    --accent: #3B82F6;
-    --accent-dim: rgba(59, 130, 246, 0.15);
-    --border: rgba(255, 255, 255, 0.06);
-    --border-strong: rgba(255, 255, 255, 0.12);
-    --grid-dot: rgba(255, 255, 255, 0.08);
-    --grid-line: rgba(255, 255, 255, 0.04);
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
-    --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
-    --shadow-lg: 0 12px 32px rgba(0,0,0,0.5);
-  }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0F1117;
+  --surface: #1A1D27;
+  --surface-2: #222636;
+  --text: #E2E8F0;
+  --text-muted: #94A3B8;
+  --accent: #3B82F6;
+  --accent-text: #3B82F6;
+  --accent-dim: rgba(59, 130, 246, 0.15);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --grid-dot: rgba(255, 255, 255, 0.08);
+  --grid-line: rgba(255, 255, 255, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.5);
+  --spotlight-inner: rgba(59, 130, 246, 0.07);
+  --spotlight-mid: rgba(59, 130, 246, 0.03);
 }
 
 @theme inline {
@@ -68,6 +84,21 @@ body {
   font-family: var(--font-inter), system-ui, sans-serif;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* ─── Theme toggle ──────────────────────────────────────── */
+.theme-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.theme-toggle:hover {
+  color: var(--text);
 }
 
 /* ─── Blueprint grid pattern ────────────────────────────── */
@@ -112,7 +143,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: var(--shadow-sm);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.25s ease, border-color 0.25s ease;
 }
 
 .card:hover {
@@ -141,7 +172,7 @@ body {
 /* ─── Selection ─────────────────────────────────────────── */
 ::selection {
   background: var(--accent-dim);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* ─── Focus ring ────────────────────────────────────────── */
@@ -202,7 +233,7 @@ body {
 }
 
 .prose-blueprint a {
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: underline;
   text-decoration-color: var(--accent-dim);
 }

@@ -56,8 +56,8 @@ export default function BlogCard({ post, scrollPercent, isRead }: BlogCardProps)
               key={tag}
               className="tag"
               style={{
-                background: `${TAG_COLORS[tag] ?? "var(--accent)"}1a`,
-                color: TAG_COLORS[tag] ?? "var(--accent)",
+                background: `${TAG_COLORS[tag] ?? "var(--accent-text)"}1a`,
+                color: TAG_COLORS[tag] ?? "var(--accent-text)",
               }}
             >
               {tag}

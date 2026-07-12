@@ -1,11 +1,9 @@
 import { getAllPosts } from "@/lib/mdx";
 import Hero from "@/components/home/Hero";
-import StatsStrip from "@/components/home/StatsStrip";
-import ArchitectureDiagram from "@/components/home/ArchitectureDiagram";
+import AboutSpec from "@/components/home/AboutSpec";
+import Journey from "@/components/home/Journey";
 import LatestNotes from "@/components/home/LatestNotes";
 import ResearchAreas from "@/components/home/ResearchAreas";
-import Projects from "@/components/home/Projects";
-import AboutSpec from "@/components/home/AboutSpec";
 
 export default function HomePage() {
   const posts = getAllPosts();
@@ -14,12 +12,10 @@ export default function HomePage() {
   return (
     <>
       <Hero />
-      <StatsStrip />
-      <ArchitectureDiagram />
+      <AboutSpec />
+      <Journey />
       <LatestNotes posts={latestPosts} />
       <ResearchAreas posts={posts} />
-      <Projects />
-      <AboutSpec />
     </>
   );
 }

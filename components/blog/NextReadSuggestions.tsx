@@ -52,7 +52,7 @@ export default function NextReadSuggestions({ suggestions }: NextReadSuggestions
             <div className="p-4">
               <div className="flex flex-wrap gap-1 mb-2">
                 {post.tags.slice(0, 1).map((tag) => (
-                  <span key={tag} className="font-mono text-[10px]" style={{ color: "var(--accent)" }}>
+                  <span key={tag} className="font-mono text-[10px]" style={{ color: "var(--accent-text)" }}>
                     {tag}
                   </span>
                 ))}

@@ -48,7 +48,7 @@ export default function LatestNotes({ posts }: LatestNotesProps) {
           <Link
             href="/blog"
             className="hidden sm:inline-flex items-center gap-1 text-sm font-medium transition-colors hover:underline"
-            style={{ color: "var(--accent)" }}
+            style={{ color: "var(--accent-text)" }}
           >
             View all notes →
           </Link>
@@ -102,8 +102,8 @@ export default function LatestNotes({ posts }: LatestNotesProps) {
                           key={tag}
                           className="tag"
                           style={{
-                            background: `${TAG_COLORS[tag] ?? "var(--accent)"}1a`,
-                            color: TAG_COLORS[tag] ?? "var(--accent)",
+                            background: `${TAG_COLORS[tag] ?? "var(--accent-text)"}1a`,
+                            color: TAG_COLORS[tag] ?? "var(--accent-text)",
                           }}
                         >
                           {tag}
@@ -157,7 +157,7 @@ export default function LatestNotes({ posts }: LatestNotesProps) {
           <Link
             href="/blog"
             className="inline-flex items-center gap-1 text-sm font-medium"
-            style={{ color: "var(--accent)" }}
+            style={{ color: "var(--accent-text)" }}
           >
             View all notes →
           </Link>

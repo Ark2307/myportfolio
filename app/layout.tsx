@@ -35,6 +35,20 @@ export const metadata: Metadata = {
   },
 };
 
+// Runs before hydration to set `data-theme` from localStorage (or system
+// preference on first visit) so there's no flash of the wrong theme.
+const THEME_INIT_SCRIPT = `
+(function () {
+  try {
+    var stored = localStorage.getItem("theme");
+    var theme = stored === "dark" || stored === "light"
+      ? stored
+      : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -44,7 +58,11 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${ibmPlexSans.variable} ${jetbrainsMono.variable} h-full`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col" style={{ background: "var(--bg)", color: "var(--text)" }}>
         <Navbar />
         <main className="flex-1">

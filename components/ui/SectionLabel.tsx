@@ -8,7 +8,7 @@ export default function SectionLabel({ label, className = "" }: SectionLabelProp
     <div className={`flex items-center gap-3 mb-3 ${className}`}>
       <span
         className="font-mono text-[11px] font-medium tracking-[0.15em] uppercase"
-        style={{ color: "var(--accent)" }}
+        style={{ color: "var(--accent-text)" }}
       >
         {label}
       </span>
