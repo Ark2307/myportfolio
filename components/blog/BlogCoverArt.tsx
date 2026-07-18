@@ -811,6 +811,176 @@ function SwaggerParserAgentCover() {
   );
 }
 
+/* ── Observability Dashboard: multi-agent ingestion pipeline ── */
+function ObservabilityDashboardCover() {
+  const AGENTS = [
+    { name: "Claude", x: 26, strategy: "BORROW", color: "#8B5CF6" },
+    { name: "Cursor", x: 152, strategy: "TRUST", color: "#10B981" },
+    { name: "Copilot", x: 278, strategy: "INVENT", color: "#3B82F6" },
+    { name: "Codex", x: 404, strategy: "INVENT", color: "#3B82F6" },
+    { name: "Gemini", x: 530, strategy: "INVENT", color: "#3B82F6" },
+    { name: "LangChain", x: 656, strategy: "INVENT", color: "#3B82F6" },
+  ] as const;
+  const AW = 118;
+  const AH = 48;
+  const AY = 34;
+  const BUS_Y = 98;
+  const glowFor = (c: string) => (c === "#3B82F6" ? "od-gb" : c === "#8B5CF6" ? "od-gp" : "od-gg");
+
+  return (
+    <svg
+      viewBox="0 0 800 450"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full h-full"
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <style>{STYLE}</style>
+        <pattern id="od-dots" width="24" height="24" patternUnits="userSpaceOnUse">
+          <circle cx="12" cy="12" r="0.7" fill="rgba(255,255,255,0.045)" />
+        </pattern>
+        <filter id="od-gb">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="od-gp">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="od-gg">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <radialGradient id="od-bg" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+        </radialGradient>
+        {/* Motion paths: each agent → bus → center → aggregator */}
+        {AGENTS.map((a) => (
+          <path key={a.name} id={`od-${a.name}`} d={`M ${a.x + AW / 2} ${AY + AH} L ${a.x + AW / 2} ${BUS_Y} L 400 ${BUS_Y} L 400 116`} />
+        ))}
+        <path id="od-agg-kafka" d="M 400 162 L 400 186" />
+        <path id="od-kafka-cons" d="M 400 234 L 400 258" />
+        <path id="od-cons-es" d="M 400 302 L 400 326" />
+      </defs>
+
+      {/* Background */}
+      <rect width="800" height="450" fill="#0F1117" />
+      <rect width="800" height="450" fill="url(#od-dots)" />
+      <ellipse cx="400" cy="220" rx="380" ry="210" fill="url(#od-bg)" />
+
+      {/* Header */}
+      <text x="400" y="22" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8.5" fill="#334155" letterSpacing="3">
+        AI AGENT OBSERVABILITY · SIX AGENTS, ONE NORMALIZED EVENT
+      </text>
+
+      {/* ── AGENT BOXES ── */}
+      {AGENTS.map((a) => {
+        const cx = a.x + AW / 2;
+        return (
+          <g key={a.name}>
+            <rect x={a.x} y={AY} width={AW} height={AH} rx="5" fill="#0F1117" stroke={a.color} strokeWidth="1.5" />
+            <rect x={a.x} y={AY} width={AW} height={AH} rx="5" fill={`${a.color}12`} />
+            <text x={cx} y={AY + 15} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#475569" letterSpacing="2">AGENT</text>
+            <text x={cx} y={AY + 31} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="700" fill={a.color}>{a.name}</text>
+            <text x={cx} y={AY + 43} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill={a.color} opacity="0.75" letterSpacing="1.5">{a.strategy}</text>
+            <circle cx={a.x + AW - 8} cy={AY + 8} r="3" fill={a.color} style={{ animation: "bca-pulse 1.6s ease-in-out infinite" }} filter={`url(#${glowFor(a.color)})`} />
+          </g>
+        );
+      })}
+
+      {/* Traces: agents → bus */}
+      {AGENTS.map((a) => (
+        <path key={a.name} d={`M ${a.x + AW / 2} ${AY + AH} L ${a.x + AW / 2} ${BUS_Y}`} stroke={a.color} strokeWidth="1" fill="none" strokeDasharray="3 3" opacity="0.3" />
+      ))}
+      <path d={`M ${AGENTS[0].x + AW / 2} ${BUS_Y} L ${AGENTS[5].x + AW / 2} ${BUS_Y}`} stroke="#3B82F6" strokeWidth="1" fill="none" opacity="0.15" />
+      {AGENTS.map((a) => (
+        <rect key={a.name} x={a.x + AW / 2 - 3} y={BUS_Y - 3} width={6} height={6} rx="1" fill={a.color} opacity="0.5" />
+      ))}
+      <path d={`M 400 ${BUS_Y} L 400 116`} stroke="#3B82F6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+
+      {/* ── AGGREGATOR ── */}
+      <rect x="300" y="116" width="200" height="46" rx="5" fill="#0F1117" stroke="#3B82F6" strokeWidth="1.5" />
+      <rect x="300" y="116" width="200" height="46" rx="5" fill="rgba(59,130,246,0.07)" />
+      <text x="400" y="132" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#475569" letterSpacing="2.5">PER-TENANT BUFFER</text>
+      <text x="400" y="150" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="14" fontWeight="700" fill="#3B82F6">Aggregator</text>
+      <text x="514" y="141" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#334155">flush · 5s or 100 events</text>
+      <circle cx="491" cy="124" r="3" fill="#3B82F6" style={{ animation: "bca-pulse 1.4s ease-in-out infinite" }} filter="url(#od-gb)" />
+
+      {/* Trace: aggregator → kafka */}
+      <path d="M 400 162 L 400 186" stroke="#3B82F6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+
+      {/* ── KAFKA ── */}
+      <rect x="280" y="186" width="240" height="48" rx="5" fill="#0F1117" stroke="#8B5CF6" strokeWidth="1.5" />
+      <rect x="280" y="186" width="240" height="48" rx="5" fill="rgba(139,92,246,0.08)" />
+      <text x="400" y="202" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#475569" letterSpacing="2.5">MESSAGE QUEUE</text>
+      <text x="400" y="221" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="15" fontWeight="700" fill="#8B5CF6">Kafka</text>
+      <text x="534" y="212" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#334155">partitioned by tenant</text>
+      <circle cx="511" cy="194" r="3" fill="#8B5CF6" style={{ animation: "bca-pulse 1.8s ease-in-out infinite", animationDelay: "0.3s" }} filter="url(#od-gp)" />
+
+      {/* Trace: kafka → consumers */}
+      <path d="M 400 234 L 400 258" stroke="#8B5CF6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+
+      {/* ── CONSUMERS ── */}
+      <rect x="300" y="258" width="200" height="44" rx="5" fill="#0F1117" stroke="#10B981" strokeWidth="1.5" />
+      <rect x="300" y="258" width="200" height="44" rx="5" fill="rgba(16,185,129,0.08)" />
+      <text x="400" y="274" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#475569" letterSpacing="2.5">ASYNC WRITERS</text>
+      <text x="400" y="292" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="14" fontWeight="700" fill="#10B981">Consumers</text>
+      <circle cx="491" cy="266" r="3" fill="#10B981" style={{ animation: "bca-pulse 2s ease-in-out infinite", animationDelay: "0.6s" }} filter="url(#od-gg)" />
+
+      {/* Trace: consumers → elasticsearch */}
+      <path d="M 400 302 L 400 326" stroke="#10B981" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+
+      {/* ── ELASTICSEARCH ── */}
+      <rect x="290" y="326" width="220" height="46" rx="5" fill="#0F1117" stroke="#10B981" strokeWidth="1.5" />
+      <rect x="290" y="326" width="220" height="46" rx="5" fill="rgba(16,185,129,0.07)" />
+      <text x="400" y="342" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#475569" letterSpacing="2.5">SEARCH INDEX</text>
+      <text x="400" y="360" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="14" fontWeight="700" fill="#10B981">Elasticsearch</text>
+      <text x="524" y="351" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#334155">one document per span</text>
+      <circle cx="501" cy="334" r="3" fill="#10B981" style={{ animation: "bca-pulse 1.5s ease-in-out infinite", animationDelay: "0.9s" }} filter="url(#od-gg)" />
+
+      {/* ── RESULT METRIC ── */}
+      <rect x="190" y="392" width="420" height="44" rx="6" fill="rgba(59,130,246,0.07)" stroke="rgba(59,130,246,0.2)" strokeWidth="1" />
+      <text x="400" y="408" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#475569" letterSpacing="3">RESULT</text>
+      <text x="400" y="425" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="13" fontWeight="700" fill="#3B82F6">6 agents → 3 identity strategies → 1 shape</text>
+
+      {/* ── ANIMATED DATA PACKETS ── */}
+      {AGENTS.map((a, i) => (
+        <circle key={a.name} r="4" fill={a.color} filter={`url(#${glowFor(a.color)})`}>
+          <animateMotion dur="2.4s" repeatCount="indefinite" begin={`${i * 0.35}s`} calcMode="linear">
+            <mpath href={`#od-${a.name}`} />
+          </animateMotion>
+        </circle>
+      ))}
+      {[0, 0.5].map((delay) => (
+        <circle key={delay} r="4" fill="#3B82F6" filter="url(#od-gb)">
+          <animateMotion dur="1s" repeatCount="indefinite" begin={`${1.8 + delay}s`} calcMode="linear">
+            <mpath href="#od-agg-kafka" />
+          </animateMotion>
+        </circle>
+      ))}
+      {[0, 0.5].map((delay) => (
+        <circle key={delay} r="4" fill="#8B5CF6" filter="url(#od-gp)">
+          <animateMotion dur="1s" repeatCount="indefinite" begin={`${2.3 + delay}s`} calcMode="linear">
+            <mpath href="#od-kafka-cons" />
+          </animateMotion>
+        </circle>
+      ))}
+      {[0, 0.5].map((delay) => (
+        <circle key={delay} r="4" fill="#10B981" filter="url(#od-gg)">
+          <animateMotion dur="1s" repeatCount="indefinite" begin={`${2.8 + delay}s`} calcMode="linear">
+            <mpath href="#od-cons-es" />
+          </animateMotion>
+        </circle>
+      ))}
+
+      {/* Corner annotations */}
+      <text x="18" y="444" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">aryan.dev</text>
+      <text x="782" y="444" textAnchor="end" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">ai-infrastructure · observability</text>
+    </svg>
+  );
+}
+
 /* ── Generic tag cover (fallback) ──────────────────────── */
 function GenericCover({ tags }: { tags: string[] }) {
   const primary = tags[0] ?? "distributed-systems";
@@ -870,6 +1040,7 @@ const SLUG_MAP: Record<string, React.FC> = {
   redTeamingOchestrator: RedTeamOrchestratorCover,
   CodeAnalysisAgent: CodeAnalysisAgentCover,
   SwaggerParserAgent: SwaggerParserAgentCover,
+  obervabilityService: ObservabilityDashboardCover,
 };
 
 export default function BlogCoverArt({ slug, tags, className = "" }: BlogCoverArtProps) {
