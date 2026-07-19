@@ -8,14 +8,7 @@ import type { PostMeta } from "@/lib/mdx";
 import { getAllPostStats } from "@/lib/db";
 import SectionLabel from "@/components/ui/SectionLabel";
 import BlogCoverArt from "@/components/blog/BlogCoverArt";
-
-const TAG_COLORS: Record<string, string> = {
-  "distributed-systems": "var(--tag-distributed)",
-  "ai-infrastructure":   "var(--tag-ai)",
-  "databases":           "var(--tag-database)",
-  "observability":       "var(--tag-observability)",
-  "security":            "var(--tag-security)",
-};
+import { getTagColor } from "@/lib/researchAreas";
 
 interface LatestNotesProps {
   posts: PostMeta[];
@@ -102,8 +95,8 @@ export default function LatestNotes({ posts }: LatestNotesProps) {
                           key={tag}
                           className="tag"
                           style={{
-                            background: `${TAG_COLORS[tag] ?? "var(--accent-text)"}1a`,
-                            color: TAG_COLORS[tag] ?? "var(--accent-text)",
+                            background: `${getTagColor(tag)}1a`,
+                            color: getTagColor(tag),
                           }}
                         >
                           {tag}

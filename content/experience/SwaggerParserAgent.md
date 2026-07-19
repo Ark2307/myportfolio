@@ -1,3 +1,10 @@
+---
+title: "Swagger Knows the Endpoints. It Doesn't Know the Workflow."
+date: "2025-09-15"
+tags: ["security", "ai-infrastructure"]
+excerpt: "How I turned a static OpenAPI specification into realistic, stateful API traffic — building a dependency graph across hundreds of endpoints so a security-testing pipeline could replay requests that actually pass validation."
+---
+
 # Swagger Knows the Endpoints. It Doesn't Know the Workflow.
 
 I thought parsing an OpenAPI specification would be the easy part. It turned out parsing wasn't the problem at all — the real challenge was teaching a machine how APIs depend on one another.

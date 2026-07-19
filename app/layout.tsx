@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import PageTransition from "@/components/ui/PageTransition";
+import { SITE_URL } from "@/lib/seo";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -25,13 +26,21 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Aryan Khandelwal — Software Engineer & Technical Writer",
   description:
     "Engineering systems at scale. Writing about distributed systems, AI infrastructure, databases, and observability.",
+  alternates: { canonical: "/" },
   openGraph: {
     title: "Aryan Khandelwal",
     description: "Software Engineer & Technical Writer",
+    url: "/",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Aryan Khandelwal",
+    description: "Software Engineer & Technical Writer",
   },
 };
 

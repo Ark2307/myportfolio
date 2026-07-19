@@ -183,22 +183,94 @@ body {
 }
 
 /* ─── Prose overrides for MDX ───────────────────────────── */
+/* Deliberately hand-rolled rather than @tailwindcss/typography — Tailwind v4
+   Preflight resets all heading font-size/weight/margin to inherit, so every
+   rule that matters (size, weight, rhythm) has to be explicit here. */
 .prose-blueprint h1,
 .prose-blueprint h2,
-.prose-blueprint h3 {
+.prose-blueprint h3,
+.prose-blueprint h4 {
   font-family: var(--font-ibm), system-ui, sans-serif;
   color: var(--text);
+  font-weight: 600;
+  scroll-margin-top: 6rem; /* clears the fixed pill navbar on anchor jumps */
+}
+
+.prose-blueprint > *:first-child {
+  margin-top: 0;
+}
+
+.prose-blueprint h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 2.5rem 0 1.25rem;
 }
 
 .prose-blueprint h2 {
+  font-size: 1.5rem;
+  line-height: 1.3;
+  margin: 2.75rem 0 1rem;
   border-left: 3px solid var(--accent);
   padding-left: 12px;
+}
+
+.prose-blueprint h3 {
+  font-size: 1.25rem;
+  line-height: 1.4;
+  margin: 2rem 0 0.75rem;
+}
+
+.prose-blueprint h4 {
+  font-size: 1.05rem;
+  line-height: 1.4;
+  margin: 1.5rem 0 0.5rem;
 }
 
 .prose-blueprint p {
   color: var(--text);
   line-height: 1.8;
   margin-bottom: 1.5rem;
+}
+
+.prose-blueprint strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.prose-blueprint em {
+  font-style: italic;
+}
+
+.prose-blueprint ul,
+.prose-blueprint ol {
+  margin: 0 0 1.5rem 0;
+  padding-left: 1.5rem;
+  color: var(--text);
+}
+
+.prose-blueprint ul { list-style: disc; }
+.prose-blueprint ol { list-style: decimal; }
+
+.prose-blueprint li {
+  margin-bottom: 0.5rem;
+  line-height: 1.8;
+}
+
+.prose-blueprint li::marker {
+  color: var(--text-muted);
+}
+
+.prose-blueprint li > ul,
+.prose-blueprint li > ol {
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
+.prose-blueprint hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2.5rem 0;
 }
 
 .prose-blueprint code {
@@ -211,11 +283,26 @@ body {
 }
 
 .prose-blueprint pre {
+  position: relative;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1.25rem;
   overflow-x: auto;
+}
+
+.prose-blueprint pre[data-language]::before {
+  content: attr(data-language);
+  position: absolute;
+  top: 0.6rem;
+  right: 0.9rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .prose-blueprint pre code {
@@ -242,3 +329,82 @@ body {
   border-radius: 8px;
   border: 1px solid var(--border);
 }
+
+/* GFM tables — wrapped in .prose-table-wrapper by the `table` component
+   override so wide tables scroll horizontally instead of blowing out the
+   reading column on small screens. */
+.prose-table-wrapper {
+  overflow-x: auto;
+  margin: 0 0 1.5rem;
+}
+
+.prose-blueprint table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.prose-blueprint th,
+.prose-blueprint td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.9rem;
+  text-align: left;
+}
+
+.prose-blueprint thead th {
+  background: var(--surface-2);
+  font-family: var(--font-ibm), system-ui, sans-serif;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.prose-blueprint td {
+  color: var(--text-muted);
+}
+
+/* ─── Syntax highlighting (rehype-highlight / highlight.js classes) ────── */
+/* Token colors are drawn from the same tag/accent tokens used elsewhere so
+   code blocks feel like part of the design system, not a bolted-on theme. */
+.prose-blueprint .hljs-comment,
+.prose-blueprint .hljs-quote {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.prose-blueprint .hljs-keyword,
+.prose-blueprint .hljs-selector-tag,
+.prose-blueprint .hljs-literal {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.prose-blueprint .hljs-string,
+.prose-blueprint .hljs-addition {
+  color: var(--tag-database);
+}
+
+.prose-blueprint .hljs-number,
+.prose-blueprint .hljs-attr,
+.prose-blueprint .hljs-attribute {
+  color: var(--tag-observability);
+}
+
+.prose-blueprint .hljs-title,
+.prose-blueprint .hljs-title.function_,
+.prose-blueprint .hljs-section {
+  color: var(--tag-distributed);
+}
+
+.prose-blueprint .hljs-variable,
+.prose-blueprint .hljs-template-variable,
+.prose-blueprint .hljs-type,
+.prose-blueprint .hljs-built_in {
+  color: var(--tag-ai);
+}
+
+.prose-blueprint .hljs-deletion {
+  color: var(--tag-security);
+}
+
+.prose-blueprint .hljs-emphasis { font-style: italic; }
+.prose-blueprint .hljs-strong { font-weight: 700; }

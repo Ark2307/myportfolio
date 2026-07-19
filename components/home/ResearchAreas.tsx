@@ -2,47 +2,9 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Network, Brain, Database, Activity, Shield } from "lucide-react";
 import SectionLabel from "@/components/ui/SectionLabel";
 import type { PostMeta } from "@/lib/mdx";
-
-const AREAS = [
-  {
-    id: "distributed-systems",
-    label: "Distributed Systems",
-    desc: "Consensus, replication, consistency models, and failure modes in large-scale systems.",
-    icon: Network,
-    color: "var(--tag-distributed)",
-  },
-  {
-    id: "ai-infrastructure",
-    label: "AI Infrastructure",
-    desc: "MLOps, vector databases, embedding pipelines, and serving large language models.",
-    icon: Brain,
-    color: "var(--tag-ai)",
-  },
-  {
-    id: "databases",
-    label: "Databases",
-    desc: "Storage engines, query planners, indexing strategies, and schema evolution.",
-    icon: Database,
-    color: "var(--tag-database)",
-  },
-  {
-    id: "observability",
-    label: "Observability",
-    desc: "Structured events, SLO-driven alerting, distributed tracing, and continuous profiling.",
-    icon: Activity,
-    color: "var(--tag-observability)",
-  },
-  {
-    id: "security",
-    label: "Security",
-    desc: "API security, threat modeling, supply chain integrity, and zero-trust architectures.",
-    icon: Shield,
-    color: "var(--tag-security)",
-  },
-];
+import { RESEARCH_AREAS } from "@/lib/researchAreas";
 
 interface ResearchAreasProps {
   posts: PostMeta[];
@@ -66,20 +28,20 @@ export default function ResearchAreas({ posts }: ResearchAreasProps) {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {AREAS.map((area, i) => {
+          {RESEARCH_AREAS.map((area, i) => {
             const Icon = area.icon;
-            const count = countByTag(area.id);
+            const count = countByTag(area.slug);
 
             return (
               <motion.div
-                key={area.id}
+                key={area.slug}
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.08 }}
               >
               <Link
-                href={`/blog?tag=${area.id}`}
+                href={`/blog?tag=${area.slug}`}
                 className="card group p-6 block"
                 style={{ borderLeft: `3px solid ${area.color}`, textDecoration: "none" }}
               >
@@ -107,7 +69,7 @@ export default function ResearchAreas({ posts }: ResearchAreasProps) {
                   {area.label}
                 </h3>
                 <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                  {area.desc}
+                  {area.description}
                 </p>
               </Link>
               </motion.div>

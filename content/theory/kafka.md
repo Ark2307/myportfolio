@@ -101,7 +101,7 @@ Common rebalance triggers:
 
 The distinction between these two timeouts matters: `session.timeout.ms` is the heartbeat timeout (default 45s), and `max.poll.interval.ms` is the processing timeout (default 5 minutes). If your processing takes 6 minutes, Kafka thinks the consumer is dead — even if it's alive and heartbeating.
 
-This is exactly the rebalance storm we hit in our [parallel consumer case study](/blog/BoostingTesting).
+This is exactly the rebalance storm we hit in our [parallel consumer case study](/blog/boostingTesting).
 
 ## The ISR: In-Sync Replicas
 

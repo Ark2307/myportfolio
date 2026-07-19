@@ -4,22 +4,26 @@ import Link from "next/link";
 import Image from "next/image";
 import type { PostMeta } from "@/lib/mdx";
 import BlogCoverArt from "@/components/blog/BlogCoverArt";
+import { getTagColor } from "@/lib/researchAreas";
 
-const TAG_COLORS: Record<string, string> = {
-  "distributed-systems": "var(--tag-distributed)",
-  "ai-infrastructure":   "var(--tag-ai)",
-  "databases":           "var(--tag-database)",
-  "observability":       "var(--tag-observability)",
-  "security":            "var(--tag-security)",
-};
+const NEW_WITHIN_DAYS = 45;
+
+function isNewPost(dateStr: string, now: number): boolean {
+  if (!dateStr) return false;
+  const ageMs = now - new Date(dateStr).getTime();
+  return ageMs >= 0 && ageMs <= NEW_WITHIN_DAYS * 24 * 60 * 60 * 1000;
+}
 
 interface BlogCardProps {
   post: PostMeta;
   scrollPercent: number;
   isRead: boolean;
+  now?: number;
 }
 
-export default function BlogCard({ post, scrollPercent, isRead }: BlogCardProps) {
+export default function BlogCard({ post, scrollPercent, isRead, now = Date.now() }: BlogCardProps) {
+  const isNew = isNewPost(post.date, now);
+
   return (
     <Link href={`/blog/${post.slug}`} className="block group card h-full" style={{ textDecoration: "none" }}>
       {/* Cover */}
@@ -36,6 +40,14 @@ export default function BlogCard({ post, scrollPercent, isRead }: BlogCardProps)
           <div className="absolute inset-0 overflow-hidden">
             <BlogCoverArt slug={post.slug} tags={post.tags} className="transition-transform duration-500 group-hover:scale-105" />
           </div>
+        )}
+        {isNew && (
+          <span
+            className="absolute top-2 left-2 px-2 py-0.5 rounded font-mono text-[10px] font-medium"
+            style={{ background: "var(--accent)", color: "#fff" }}
+          >
+            NEW
+          </span>
         )}
         {isRead && (
           <span
@@ -56,8 +68,8 @@ export default function BlogCard({ post, scrollPercent, isRead }: BlogCardProps)
               key={tag}
               className="tag"
               style={{
-                background: `${TAG_COLORS[tag] ?? "var(--accent-text)"}1a`,
-                color: TAG_COLORS[tag] ?? "var(--accent-text)",
+                background: `${getTagColor(tag)}1a`,
+                color: getTagColor(tag),
               }}
             >
               {tag}
