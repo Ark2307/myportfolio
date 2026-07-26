@@ -205,7 +205,7 @@ export default function Navbar() {
                 style={{ color: "var(--text-muted)" }}
               >
                 <Mail size={13} />
-                aryan@akto.io
+                kr.aryan2307@gmail.com
               </a>
               <a
                 href="https://github.com/Ark2307"

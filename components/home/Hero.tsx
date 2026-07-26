@@ -92,7 +92,7 @@ export default function Hero() {
                 }}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-                // Software Engineer &amp; Technical Writer
+                // Software Engineer
               </span>
             </motion.div>
 
@@ -191,7 +191,7 @@ export default function Hero() {
               style={{ borderTop: "1px solid var(--border)" }}
             >
               {[
-                ["Stack", "Go · Python · React · Postgres"],
+                ["Stack", "Java · Python · React · MongoDB"],
                 ["Focus", "Distributed Systems · AI Infra"],
                 ["Based in", "India"],
               ].map(([key, val]) => (

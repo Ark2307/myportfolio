@@ -18,7 +18,7 @@ export default function Footer() {
               Aryan Khandelwal
             </span>
             <p className="mt-2 text-sm" style={{ color: "var(--text-muted)" }}>
-              Software Engineer & Technical Writer.
+              Software Engineer.
               <br />
               Building systems at scale.
             </p>
@@ -90,7 +90,7 @@ export default function Footer() {
               className="font-mono text-xs transition-colors hover:underline"
               style={{ color: "var(--text-muted)" }}
             >
-              aryan@akto.io
+              kr.aryan2307@gmail.com
             </a>
           </div>
         </div>

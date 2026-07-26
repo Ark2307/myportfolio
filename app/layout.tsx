@@ -27,20 +27,20 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Aryan Khandelwal — Software Engineer & Technical Writer",
+  title: "Aryan Khandelwal — Software Engineer",
   description:
     "Engineering systems at scale. Writing about distributed systems, AI infrastructure, databases, and observability.",
   alternates: { canonical: "/" },
   openGraph: {
     title: "Aryan Khandelwal",
-    description: "Software Engineer & Technical Writer",
+    description: "Software Engineer",
     url: "/",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "Aryan Khandelwal",
-    description: "Software Engineer & Technical Writer",
+    description: "Software Engineer",
   },
 };
 
