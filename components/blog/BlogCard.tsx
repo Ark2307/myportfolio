@@ -22,7 +22,11 @@ interface BlogCardProps {
 }
 
 export default function BlogCard({ post, scrollPercent, isRead, now = Date.now() }: BlogCardProps) {
-  const isNew = isNewPost(post.date, now);
+  const hasStarted = scrollPercent > 0;
+  // "NEW" means untouched, not just recently published — a post you've
+  // already opened shouldn't still read as new, regardless of its age.
+  const isNew = isNewPost(post.date, now) && !hasStarted;
+  const isInProgress = hasStarted && !isRead;
 
   return (
     <Link href={`/blog/${post.slug}`} className="block group card h-full" style={{ textDecoration: "none" }}>
@@ -47,6 +51,14 @@ export default function BlogCard({ post, scrollPercent, isRead, now = Date.now()
             style={{ background: "var(--accent)", color: "#fff" }}
           >
             NEW
+          </span>
+        )}
+        {isInProgress && (
+          <span
+            className="absolute top-2 left-2 px-2 py-0.5 rounded font-mono text-[10px] font-medium"
+            style={{ background: "var(--surface)", color: "var(--status-amber)", border: "1px solid var(--border)" }}
+          >
+            IN PROGRESS
           </span>
         )}
         {isRead && (
