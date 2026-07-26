@@ -15,6 +15,7 @@ import ReadingProgress from "@/components/blog/ReadingProgress";
 import ReadingPrompt from "@/components/blog/ReadingPrompt";
 import NextReadSuggestions from "@/components/blog/NextReadSuggestions";
 import BlogCoverArt from "@/components/blog/BlogCoverArt";
+import EngagementBar from "@/components/blog/EngagementBar";
 import CodeBlock from "@/components/blog/CodeBlock";
 import { TocSidebar, TocMobile } from "@/components/blog/TableOfContents";
 import { getTagColor } from "@/lib/researchAreas";
@@ -207,8 +208,11 @@ export default function BlogPostClient({ post, suggestions }: BlogPostClientProp
                 </ReactMarkdown>
               </div>
 
+              <EngagementBar slug={post.slug} readingTime={post.readingTime} />
+
               {/* Next read suggestions */}
               <NextReadSuggestions suggestions={suggestions} />
+
             </div>
 
             <TocSidebar items={toc} />
