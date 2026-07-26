@@ -981,6 +981,193 @@ function ObservabilityDashboardCover() {
   );
 }
 
+/* ── AI Blog: prompt journey through the agent stack ───── */
+function AIPromptJourneyCover() {
+  return (
+    <svg
+      viewBox="0 0 800 450"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full h-full"
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <style>{STYLE}</style>
+        <pattern id="pj-dots" width="24" height="24" patternUnits="userSpaceOnUse">
+          <circle cx="12" cy="12" r="0.7" fill="rgba(255,255,255,0.045)" />
+        </pattern>
+        <filter id="pj-gb">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="pj-gp">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="pj-gg">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <radialGradient id="pj-bg" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+        </radialGradient>
+        {/* Motion paths — left-to-right pipeline, then right-to-left continuation below */}
+        <path id="pj-p1" d="M 158 90 L 185 90" />
+        <path id="pj-p2" d="M 315 90 L 345 90" />
+        <path id="pj-p3" d="M 475 90 L 590 90" />
+        <path id="pj-lbend" d="M 675 140 L 675 192 L 610 192 L 610 235" />
+        <path id="pj-p5" d="M 545 265 L 505 265" />
+        <path id="pj-p6" d="M 375 265 L 335 265" />
+        <path id="pj-loop" d="M 270 235 Q 355 195 440 235" />
+        <path id="pj-exit" d="M 440 295 L 440 355" />
+      </defs>
+
+      {/* Background */}
+      <rect width="800" height="450" fill="#0F1117" />
+      <rect width="800" height="450" fill="url(#pj-dots)" />
+      <ellipse cx="400" cy="220" rx="380" ry="210" fill="url(#pj-bg)" />
+
+      {/* Header */}
+      <text x="400" y="22" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8.5" fill="#334155" letterSpacing="3">
+        ANATOMY OF A PROMPT · REQUEST TO RESPONSE
+      </text>
+
+      {/* ── ROW 1: request → prompt engineering → tokenize → retrieve (left → right) ── */}
+
+      {/* CLIENT REQUEST */}
+      <rect x="18" y="58" width="140" height="64" rx="5" fill="#0F1117" stroke="#3B82F6" strokeWidth="1.5" />
+      <rect x="18" y="58" width="140" height="64" rx="5" fill="rgba(59,130,246,0.08)" />
+      <text x="88" y="76" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="1.5">CLIENT REQUEST</text>
+      <text x="88" y="98" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="13" fontWeight="700" fill="#3B82F6">User Prompt</text>
+      <circle cx="149" cy="67" r="3.5" fill="#3B82F6" style={{ animation: "bca-pulse 1.2s ease-in-out infinite" }} filter="url(#pj-gb)" />
+
+      {/* Trace: request → prompt engineering */}
+      <path d="M 158 90 L 185 90" stroke="#3B82F6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.4" />
+
+      {/* PROMPT ENGINEERING */}
+      <rect x="185" y="58" width="130" height="64" rx="5" fill="#0F1117" stroke="#8B5CF6" strokeWidth="1.5" />
+      <rect x="185" y="58" width="130" height="64" rx="5" fill="rgba(139,92,246,0.08)" />
+      <text x="250" y="76" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill="#475569" letterSpacing="1">PROMPT ENGINEERING</text>
+      <text x="250" y="98" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="700" fill="#8B5CF6">Scope + Rules</text>
+      <circle cx="306" cy="67" r="3" fill="#8B5CF6" style={{ animation: "bca-pulse 1.6s ease-in-out infinite", animationDelay: "0.3s" }} filter="url(#pj-gp)" />
+
+      {/* Trace: prompt engineering → tokenize */}
+      <path d="M 315 90 L 345 90" stroke="#8B5CF6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.4" />
+
+      {/* TOKENIZE */}
+      <rect x="345" y="58" width="130" height="64" rx="5" fill="#0F1117" stroke="#3B82F6" strokeWidth="1.5" />
+      <rect x="345" y="58" width="130" height="64" rx="5" fill="rgba(59,130,246,0.08)" />
+      <text x="410" y="76" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="1.5">TOKENIZATION</text>
+      <text x="410" y="98" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="700" fill="#3B82F6">Tokens</text>
+      <circle cx="466" cy="67" r="3" fill="#3B82F6" style={{ animation: "bca-pulse 1.4s ease-in-out infinite", animationDelay: "0.6s" }} filter="url(#pj-gb)" />
+
+      {/* Trace: tokenize → retrieve (search trace) */}
+      <path d="M 475 90 L 590 90" stroke="#3B82F6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.5" />
+
+      {/* RAG RETRIEVAL (prominent, with search rings) */}
+      <circle cx="675" cy="90" r="68" fill="none" stroke="#10B981" strokeWidth="0.7" opacity="0.1" style={{ animation: "bca-pulse 2.4s ease-in-out infinite" }} />
+      <circle cx="675" cy="90" r="85" fill="none" stroke="#10B981" strokeWidth="0.5" opacity="0.06" style={{ animation: "bca-pulse 2.4s ease-in-out infinite", animationDelay: "0.7s" }} />
+      <rect x="590" y="40" width="170" height="100" rx="5" fill="#0F1117" stroke="#10B981" strokeWidth="2" />
+      <rect x="590" y="40" width="170" height="100" rx="5" fill="rgba(16,185,129,0.07)" />
+      <text x="675" y="64" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#475569" letterSpacing="2">RAG RETRIEVAL</text>
+      <text x="675" y="86" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="13" fontWeight="700" fill="#10B981">Vector Search</text>
+      <text x="675" y="106" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#64748B">embed · rank · context</text>
+
+      {/* L-shaped trace: retrieval bottom → bend → planner top */}
+      <path d="M 675 140 L 675 192 L 610 192 L 610 235" stroke="#10B981" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.4" />
+      {/* Junction dots at L-bend */}
+      <rect x="672" y="189" width="6" height="6" rx="1" fill="#10B981" opacity="0.5" />
+      <rect x="607" y="189" width="6" height="6" rx="1" fill="#10B981" opacity="0.5" />
+      <text x="700" y="170" fontFamily="'Courier New',monospace" fontSize="7" fill="#334155">context</text>
+
+      {/* ── ROW 2: planner → react agent → mcp tool call (right → left) ── */}
+
+      {/* PLANNER */}
+      <rect x="545" y="235" width="130" height="60" rx="5" fill="#0F1117" stroke="#3B82F6" strokeWidth="1.5" />
+      <rect x="545" y="235" width="130" height="60" rx="5" fill="rgba(59,130,246,0.08)" />
+      <text x="610" y="253" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill="#475569" letterSpacing="1.5">PLANNER</text>
+      <text x="610" y="275" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="700" fill="#3B82F6">Decompose</text>
+
+      {/* Trace: planner → react agent */}
+      <path d="M 545 265 L 505 265" stroke="#3B82F6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.4" />
+
+      {/* REACT AGENT */}
+      <rect x="375" y="235" width="130" height="60" rx="5" fill="#0F1117" stroke="#8B5CF6" strokeWidth="1.5" />
+      <rect x="375" y="235" width="130" height="60" rx="5" fill="rgba(139,92,246,0.08)" />
+      <text x="440" y="253" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill="#475569" letterSpacing="1.5">REACT AGENT</text>
+      <text x="440" y="275" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="700" fill="#8B5CF6">ReAct Loop</text>
+      <circle cx="496" cy="244" r="3" fill="#8B5CF6" style={{ animation: "bca-pulse 1.8s ease-in-out infinite" }} filter="url(#pj-gp)" />
+
+      {/* Trace: react agent → mcp tool call (act) */}
+      <path d="M 375 265 L 335 265" stroke="#8B5CF6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.4" />
+      <text x="313" y="253" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill="#334155">acts</text>
+
+      {/* MCP TOOL CALL */}
+      <rect x="205" y="235" width="130" height="60" rx="5" fill="#0F1117" stroke="#10B981" strokeWidth="1.5" />
+      <rect x="205" y="235" width="130" height="60" rx="5" fill="rgba(16,185,129,0.08)" />
+      <text x="270" y="253" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill="#475569" letterSpacing="1.5">MCP TOOL CALL</text>
+      <text x="270" y="275" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="11" fontWeight="700" fill="#10B981">Client→Server</text>
+
+      {/* Feedback loop: tool result observed back into react agent */}
+      <path d="M 270 235 Q 355 195 440 235" stroke="#F59E0B" strokeWidth="1" fill="none" strokeDasharray="3 4" opacity="0.4" />
+      <text x="355" y="190" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#F59E0B" opacity="0.7" letterSpacing="1">tool result</text>
+
+      {/* Trace: react agent → final response */}
+      <path d="M 440 295 L 440 355" stroke="#3B82F6" strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.4" />
+
+      {/* ── BOTTOM ROW ── */}
+
+      {/* Loop guard badge */}
+      <rect x="18" y="355" width="148" height="52" rx="5" fill="rgba(245,158,11,0.06)" stroke="rgba(245,158,11,0.18)" strokeWidth="1" />
+      <text x="92" y="374" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">LOOP GUARD</text>
+      <text x="92" y="395" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="11" fontWeight="700" fill="#F59E0B">bounded recursion</text>
+
+      {/* Final response */}
+      <rect x="356" y="355" width="168" height="52" rx="5" fill="#0F1117" stroke="#3B82F6" strokeWidth="1" />
+      <rect x="356" y="355" width="168" height="52" rx="5" fill="rgba(59,130,246,0.06)" />
+      <text x="440" y="374" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">RESPONSE</text>
+      <text x="440" y="395" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="600" fill="#3B82F6">Grounded Answer</text>
+
+      {/* Grounding confidence badge */}
+      <rect x="530" y="355" width="252" height="52" rx="5" fill="rgba(16,185,129,0.06)" stroke="rgba(16,185,129,0.18)" strokeWidth="1" />
+      <text x="656" y="374" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">GROUNDED IN</text>
+      <text x="656" y="395" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="11" fontWeight="700" fill="#10B981">retrieved context · tool results</text>
+
+      {/* ── ANIMATED DATA PACKETS ── */}
+      <circle r="3.5" fill="#3B82F6" filter="url(#pj-gb)">
+        <animateMotion dur="0.8s" repeatCount="indefinite" begin="0s" calcMode="linear"><mpath href="#pj-p1" /></animateMotion>
+      </circle>
+      <circle r="3.5" fill="#8B5CF6" filter="url(#pj-gp)">
+        <animateMotion dur="0.8s" repeatCount="indefinite" begin="0.4s" calcMode="linear"><mpath href="#pj-p2" /></animateMotion>
+      </circle>
+      <circle r="3.5" fill="#3B82F6" filter="url(#pj-gb)">
+        <animateMotion dur="1.6s" repeatCount="indefinite" begin="0.8s" calcMode="linear"><mpath href="#pj-p3" /></animateMotion>
+      </circle>
+      {[0, 0.7].map((delay) => (
+        <circle key={delay} r="3.5" fill="#10B981" filter="url(#pj-gg)">
+          <animateMotion dur="1.6s" repeatCount="indefinite" begin={`${1.2 + delay}s`} calcMode="linear"><mpath href="#pj-lbend" /></animateMotion>
+        </circle>
+      ))}
+      <circle r="3.5" fill="#3B82F6" filter="url(#pj-gb)">
+        <animateMotion dur="0.7s" repeatCount="indefinite" begin="1.8s" calcMode="linear"><mpath href="#pj-p5" /></animateMotion>
+      </circle>
+      <circle r="3.5" fill="#8B5CF6" filter="url(#pj-gp)">
+        <animateMotion dur="0.7s" repeatCount="indefinite" begin="2.2s" calcMode="linear"><mpath href="#pj-p6" /></animateMotion>
+      </circle>
+      <circle r="3" fill="#F59E0B">
+        <animateMotion dur="1.4s" repeatCount="indefinite" begin="2.6s" calcMode="paced"><mpath href="#pj-loop" /></animateMotion>
+      </circle>
+      <circle r="3" fill="#3B82F6" filter="url(#pj-gb)">
+        <animateMotion dur="1.0s" repeatCount="indefinite" begin="3.0s" calcMode="linear"><mpath href="#pj-exit" /></animateMotion>
+      </circle>
+
+      {/* Corner annotations */}
+      <text x="18" y="444" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">aryan.dev</text>
+      <text x="782" y="444" textAnchor="end" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">ai-infrastructure</text>
+    </svg>
+  );
+}
+
 /* ── Generic tag cover (fallback) ──────────────────────── */
 function GenericCover({ tags }: { tags: string[] }) {
   const primary = tags[0] ?? "distributed-systems";
@@ -1041,6 +1228,7 @@ const SLUG_MAP: Record<string, React.FC> = {
   CodeAnalysisAgent: CodeAnalysisAgentCover,
   SwaggerParserAgent: SwaggerParserAgentCover,
   obervabilityService: ObservabilityDashboardCover,
+  "AI-Blog": AIPromptJourneyCover,
 };
 
 export default function BlogCoverArt({ slug, tags, className = "" }: BlogCoverArtProps) {

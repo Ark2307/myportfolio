@@ -236,3 +236,9 @@ Topic: Kafka internals, commit log, ISR replication.
 Layout: Producer → S0–S4 log segments (S4 pulses as "new") → Consumer; ISR LEADER / FOLLOWER A / FOLLOWER B below.  
 Colors: blue (producer, active segment), purple (older segments, followers), green (consumer).  
 Packets: blue producer→log, green log→consumer, purple ISR sync dots.
+
+### `AI-Blog` — `AIPromptJourneyCover`
+Topic: what happens between a prompt and a response — prompt engineering, tokenization, RAG retrieval, planning, ReAct agents, MCP tool calls.  
+Layout: an S-curve pipeline matching the post's own diagram order. Row 1 (left → right): Client Request → Prompt Engineering → Tokenization → RAG Retrieval (target-style box with search rings). L-bend trace down into Row 2 (right → left): Planner → ReAct Agent → MCP Tool Call, with a "tool result" feedback arc looping MCP back into the ReAct Agent. ReAct Agent exits down to a Final Response badge, flanked by a loop-guard badge and a grounding badge.  
+Colors: blue (client request, tokenization, planner, response), purple (prompt engineering, ReAct agent, MCP trace), green (RAG retrieval, MCP tool call, grounding badge), amber (loop guard, tool-result feedback arc).  
+Packets: travel strictly in pipeline order — request→prompt-eng→tokenize→retrieve→(L-bend)→planner→react→mcp, plus an amber packet on the tool-result loop and a blue packet on the react→response exit trace.
