@@ -61,7 +61,7 @@ export default function Navbar() {
               className="font-mono text-sm font-semibold tracking-tight hidden sm:block"
               style={{ color: "var(--text)" }}
             >
-              ark.dev
+              ark.codes
             </span>
           </Link>
 

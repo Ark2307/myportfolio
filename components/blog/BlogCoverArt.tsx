@@ -1168,6 +1168,177 @@ function AIPromptJourneyCover() {
   );
 }
 
+/* ── Database Tradeoffs: engines under seven databases ── */
+function DatabaseTradeoffsCover() {
+  const DB_W = 100;
+  const DB_Y = 48;
+  const DB_H = 62;
+  const dbX = (i: number) => 26 + i * (DB_W + 8);
+  const dbCX = (i: number) => dbX(i) + DB_W / 2;
+
+  const EN_W = 116;
+  const EN_Y = 196;
+  const EN_H = 76;
+  const enX = (i: number) => 27 + i * (EN_W + 10);
+  const enCX = (i: number) => enX(i) + EN_W / 2;
+
+  /* Bus row where a database's trace bends into its engine */
+  const BUS_Y = 160;
+
+  /* [name, use case, sacrifice, color, glow, engine index] */
+  const DBS = [
+    ["MongoDB", "APP DATA", "trades joins", "#3B82F6", "db-gb", 0],
+    ["PostgreSQL", "RELATIONAL", "trades scale-out", "#3B82F6", "db-gb", 0],
+    ["Elasticsearch", "SEARCH", "trades freshness", "#10B981", "db-gg", 1],
+    ["Redis", "CACHE", "trades durability", "#EF4444", "db-gr", 2],
+    ["Prometheus", "METRICS", "trades detail", "#F59E0B", "db-go", 3],
+    ["ClickHouse", "ANALYTICS", "trades updates", "#10B981", "db-gg", 4],
+    ["Cassandra", "WRITES", "trades reads", "#8B5CF6", "db-gp", 5],
+  ] as const;
+
+  /* [structure, mechanism, where the cost lands, color, glow] */
+  const ENGINES = [
+    ["B-Tree", "sorted · balanced", "pays on write", "#3B82F6", "db-gb"],
+    ["Inverted Idx", "word → docs", "pays on merge", "#10B981", "db-gg"],
+    ["Hash Slots", "16,384 · in-mem", "pays on durability", "#EF4444", "db-gr"],
+    ["Time Series", "scrape · compress", "pays on cardinality", "#F59E0B", "db-go"],
+    ["Column Store", "MergeTree · sparse", "pays on updates", "#10B981", "db-gg"],
+    ["LSM-Tree", "memtable → SSTable", "pays on read", "#8B5CF6", "db-gp"],
+  ] as const;
+
+  const traceD = (dbIndex: number, engineIndex: number) =>
+    `M ${dbCX(dbIndex)} ${DB_Y + DB_H} L ${dbCX(dbIndex)} ${BUS_Y} L ${enCX(engineIndex)} ${BUS_Y} L ${enCX(engineIndex)} ${EN_Y}`;
+
+  return (
+    <svg
+      viewBox="0 0 800 450"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full h-full"
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <style>{STYLE}</style>
+        <pattern id="db-dots" width="24" height="24" patternUnits="userSpaceOnUse">
+          <circle cx="12" cy="12" r="0.7" fill="rgba(255,255,255,0.045)" />
+        </pattern>
+        <filter id="db-gb">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="db-gp">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="db-gg">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="db-gr">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="db-go">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <radialGradient id="db-bg" cx="50%" cy="50%" r="55%">
+          <stop offset="0%" stopColor="#10B981" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="#10B981" stopOpacity="0" />
+        </radialGradient>
+        {/* Motion paths: each database down into the engine it actually runs on */}
+        {DBS.map(([name, , , , , engineIndex], i) => (
+          <path key={name} id={`db-t${i}`} d={traceD(i, engineIndex)} />
+        ))}
+      </defs>
+
+      {/* Background */}
+      <rect width="800" height="450" fill="#0F1117" />
+      <rect width="800" height="450" fill="url(#db-dots)" />
+      <ellipse cx="400" cy="210" rx="380" ry="200" fill="url(#db-bg)" />
+
+      {/* Header */}
+      <text x="400" y="22" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8.5" fill="#334155" letterSpacing="3">
+        SEVEN DATABASES · ONE STORAGE-ENGINE TRADEOFF EACH
+      </text>
+
+      {/* ── ROW 1: DATABASES (what you pick) ── */}
+      {DBS.map(([name, useCase, sacrifice, color, glow], i) => (
+        <g key={name}>
+          <rect x={dbX(i)} y={DB_Y} width={DB_W} height={DB_H} rx="5" fill="#0F1117" stroke={color} strokeWidth="1.5" />
+          <rect x={dbX(i)} y={DB_Y} width={DB_W} height={DB_H} rx="5" fill={`${color}14`} />
+          <text x={dbCX(i)} y={65} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill="#475569" letterSpacing="1.5">{useCase}</text>
+          <text x={dbCX(i)} y={87} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="10.5" fontWeight="700" fill={color}>{name}</text>
+          <text x={dbCX(i)} y={101} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill="#64748B">{sacrifice}</text>
+          <circle
+            cx={dbX(i) + DB_W - 9} cy={57} r="3" fill={color}
+            style={{ animation: "bca-pulse 1.6s ease-in-out infinite", animationDelay: `${i * 0.22}s` }}
+            filter={`url(#${glow})`}
+          />
+        </g>
+      ))}
+
+      {/* Traces: database → its engine (colored by engine) */}
+      {DBS.map(([name, , , , , engineIndex], i) => (
+        <path key={name} d={traceD(i, engineIndex)} stroke={ENGINES[engineIndex][3]} strokeWidth="1.5" fill="none" strokeDasharray="4 3" opacity="0.35" />
+      ))}
+      {/* Junction squares where a trace drops into its engine */}
+      {ENGINES.map(([structure, , , color], i) => (
+        <rect key={structure} x={enCX(i) - 3} y={BUS_Y - 3} width={6} height={6} rx="1" fill={color} opacity="0.55" />
+      ))}
+
+      {/* ── ROW 2: STORAGE ENGINES (what you're actually choosing) ── */}
+      {ENGINES.map(([structure, mechanism, cost, color], i) => (
+        <g key={structure}>
+          <rect x={enX(i)} y={EN_Y} width={EN_W} height={EN_H} rx="5" fill="#0F1117" stroke={color} strokeWidth="1.5" />
+          <rect x={enX(i)} y={EN_Y} width={EN_W} height={EN_H} rx="5" fill={`${color}12`} />
+          <text x={enCX(i)} y={212} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill="#475569" letterSpacing="2">ENGINE</text>
+          <text x={enCX(i)} y={234} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="11.5" fontWeight="700" fill={color}>{structure}</text>
+          <text x={enCX(i)} y={250} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="6.5" fill="#64748B">{mechanism}</text>
+          <text x={enCX(i)} y={264} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill={color} opacity="0.7">{cost}</text>
+        </g>
+      ))}
+
+      {/* DynamoDB rides the same ring as Cassandra */}
+      <text x={enCX(5)} y={286} textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#334155">+ DynamoDB</text>
+
+      {/* Thesis line */}
+      <text x="400" y="304" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#334155" letterSpacing="1">
+        EVERY ENGINE PAYS SOMEWHERE — AT WRITE TIME, AT READ TIME, OR IN HOW BYTES SIT ON DISK
+      </text>
+
+      {/* ── BOTTOM ROW ── */}
+
+      {/* The three cost buckets */}
+      <rect x="26" y="352" width="190" height="54" rx="5" fill="rgba(139,92,246,0.06)" stroke="rgba(139,92,246,0.18)" strokeWidth="1" />
+      <text x="121" y="371" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">THE THREE COSTS</text>
+      <text x="121" y="392" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="10.5" fontWeight="700" fill="#8B5CF6">write · read · layout</text>
+
+      {/* The question that actually matters */}
+      <rect x="232" y="352" width="336" height="54" rx="6" fill="rgba(59,130,246,0.07)" stroke="rgba(59,130,246,0.2)" strokeWidth="1" />
+      <text x="400" y="371" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="8" fill="#475569" letterSpacing="3">THE ACTUAL QUESTION</text>
+      <text x="400" y="393" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="12" fontWeight="700" fill="#3B82F6">what is it refusing to be good at</text>
+
+      {/* Failure modes */}
+      <rect x="584" y="352" width="190" height="54" rx="5" fill="rgba(245,158,11,0.06)" stroke="rgba(245,158,11,0.18)" strokeWidth="1" />
+      <text x="679" y="371" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="7" fill="#475569" letterSpacing="2">FAILURE MODES</text>
+      <text x="679" y="392" textAnchor="middle" fontFamily="'Courier New',monospace" fontSize="10.5" fontWeight="700" fill="#F59E0B">hot keys · cardinality</text>
+
+      {/* ── ANIMATED DATA PACKETS: database → engine ── */}
+      {DBS.map(([name, , , , , engineIndex], i) => (
+        <circle key={name} r="4" fill={ENGINES[engineIndex][3]} filter={`url(#${ENGINES[engineIndex][4]})`}>
+          <animateMotion dur="1.6s" repeatCount="indefinite" begin={`${i * 0.35}s`} calcMode="linear">
+            <mpath href={`#db-t${i}`} />
+          </animateMotion>
+        </circle>
+      ))}
+
+      {/* Corner annotations */}
+      <text x="18" y="444" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">aryan.dev</text>
+      <text x="782" y="444" textAnchor="end" fontFamily="'Courier New',monospace" fontSize="7.5" fill="#1E293B">databases · distributed-systems</text>
+    </svg>
+  );
+}
+
 /* ── Generic tag cover (fallback) ──────────────────────── */
 function GenericCover({ tags }: { tags: string[] }) {
   const primary = tags[0] ?? "distributed-systems";
@@ -1229,6 +1400,7 @@ const SLUG_MAP: Record<string, React.FC> = {
   SwaggerParserAgent: SwaggerParserAgentCover,
   obervabilityService: ObservabilityDashboardCover,
   "AI-Blog": AIPromptJourneyCover,
+  Database: DatabaseTradeoffsCover,
 };
 
 export default function BlogCoverArt({ slug, tags, className = "" }: BlogCoverArtProps) {
