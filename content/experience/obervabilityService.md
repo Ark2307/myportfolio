@@ -1,68 +1,55 @@
 ---
-title: "Building an Observability Dashboard for AI Agents at Scale"
+title: "Six AI Agents, Three Ways to Find a Message ID"
 date: "2026-07-12"
 tags: ["ai-infrastructure", "observability"]
-excerpt: "How we turned six AI coding agents' disconnected request logs into searchable, navigable conversations — identity resolution across Claude, Cursor, Copilot, Codex, Gemini and LangChain, Kafka-backed ingestion at scale, and session reconstruction at query time in Elasticsearch."
+excerpt: "Claude, Cursor, Copilot, Codex, Gemini and LangChain do not agree on what a message is. Normalizing them collapsed into three strategies: trust the agent's id, borrow one from a file it wasn't meant to share, or invent your own and persist a counter."
 ---
 
-# Building an Observability Dashboard for AI Agents at Scale
+# Six AI Agents, Three Ways to Find a Message ID
 
-As AI agents became part of developers' daily workflows, our customers started asking a different set of questions. Instead of asking whether we could capture AI traffic, they wanted to understand how AI was actually being used across their organization: which employees were using which agents, what conversations took place, and how much each interaction was costing them.
+Our customers stopped asking whether we could capture AI traffic and started asking what was in it. Which employees used which agents, what the conversations were, what each interaction cost.
 
-We already supported six AI agents—Claude, Cursor, Copilot, Codex, Gemini, and LangChain—with installers hooked into each one, capturing every request and response before shipping it to our backend. Capturing the data wasn't the problem. Making sense of it was.
+We already supported six agents (Claude, Cursor, Copilot, Codex, Gemini, LangChain) with installers hooked into each, capturing every request and response and shipping it to our backend. Capture wasn't the problem.
 
-Every request was stored as an independent event. There was no notion of sessions, message ordering, or tool-call spans within a conversation. To keep storage costs down, we only retained the latest ten samples per user, which meant customers trying to understand how their teams actually used AI had very little context. The goal became turning disconnected requests into searchable, navigable conversations.
+Every request was stored as an independent event. No sessions, no message ordering, no tool-call spans. And to hold storage down we retained only the latest ten samples per user, so a customer trying to understand how their team used AI was looking at ten disconnected fragments. The job was turning independent requests into conversations you could search and walk through.
 
-## Challenge 1: Making six agents speak the same language
+## Six agents don't agree on what a message is
 
-The first assumption to break was that there'd be a standard way agents represent a conversation. There isn't one. Some agents hand you a clean message identifier on every event. Some expose only a session id. Others expose almost nothing you can build on directly.
+The assumption to break first is that there's a standard representation of a conversation. There isn't. Some agents hand you a stable message identifier on every event. Some expose only a session id. Some expose nothing you can build on.
 
-Regardless of where an event came from, everything downstream expected the same normalized record:
+Everything downstream needed the same normalized record regardless of source: session ID, conversation ID, message ID, timestamp, user, span.
 
-* Session ID
-* Conversation ID
-* Message ID
-* Timestamp
-* User
-* Span
+Supporting any single agent was easy. The engineering problem was making sure the seventh integration would be another adapter rather than another redesign.
 
-Supporting each agent individually wasn't difficult. The real engineering problem was designing an abstraction so that the next integration would be another adapter, not another redesign.
-
-Across our six agents, identity resolution collapsed into three underlying strategies—the real question was never *"What's the message ID?"*, it was *"How would we even find it for this particular agent?"*
+Across six agents, identity resolution collapsed into three strategies. The question was never "what's the message ID," it was "how would we even find one for this agent."
 
 ### Trust it
 
-Cursor was the easiest case. Every hook invocation already carried a stable identifier for the current turn, so we simply propagated it into our normalized event.
+Cursor was the easy case. Every hook invocation already carried a stable identifier for the current turn, so we propagated it.
 
 ### Borrow it
 
-Claude doesn't expose a message identifier through its hooks, but it maintains its own local transcript. We treated that transcript as a secondary source of truth, reading the latest entry and reusing its identifier for the current event. It wasn't intended for this purpose, but it proved reliable enough in practice.
+Claude exposes no message identifier through its hooks, but it maintains its own local transcript. We read the latest entry from that transcript and reuse its identifier for the current event.
+
+This is the decision in the system I'm least comfortable with, and I'd still make it again. That transcript is an internal file, not an interface. Nobody promised us its format, its location, or that the last entry corresponds to the event our hook just fired on. It works, and it can break on any Claude update without warning, which makes it a maintenance liability we accepted deliberately rather than a clever trick. The alternative was putting Claude in the "invent it" bucket below and losing the ability to correlate our events with Claude's own record of the same conversation, which was worth more than the stability we gave up.
 
 ### Invent it
 
-Copilot and Gemini were the hardest. They exposed a stable session identifier but nothing that uniquely identified an individual message, and there wasn't another source we could borrow from. Codex and LangChain landed in the same bucket—session-level identity only, nothing at the message level—so they fell back to the same approach.
+Copilot and Gemini were hardest: a stable session identifier, nothing identifying an individual message, and no secondary source to borrow from. Codex and LangChain landed in the same bucket, so all four fall back to generating our own message identifiers from a per-session counter.
 
-The only option was to generate our own message identifiers by maintaining a counter per session.
+That sounds trivial until you remember every hook invocation is stateless. Each event arrives with no memory of previous requests, so the counter can't live in process memory. It has to be persisted and recovered between invocations or numbering silently drifts, and silently is the operative word: a broken counter produces plausible-looking message ordering that's wrong, which is worse than an error.
 
-That sounds simple until you remember every hook invocation is effectively stateless. Each event arrives independently with no memory of previous requests, so the counter couldn't simply live in process memory. It had to be persisted and recovered between invocations, otherwise message numbering would silently break.
+What made this reusable was hiding all three strategies behind one abstraction. Storage, search and the dashboard never learn whether an identifier came from the agent, from a transcript, or from us. They consume one event shape.
 
-None of these techniques is particularly complicated on its own. What made this reusable was hiding all three behind a single abstraction: storage, search, and the dashboard never knew whether a message identifier had been provided by the agent, recovered from a transcript, or generated by us—they simply consumed one normalized event shape.
+## Batching fixed one bottleneck and created another
 
-## Challenge 2: Handling ingestion at scale
+Every incoming event originally triggered a direct write to Elasticsearch.
 
-Once identity was solved, throughput became the next challenge.
+The first optimization was obvious: each tenant's aggregator accumulates events in memory and flushes every five seconds or every hundred events, whichever comes first. That cut network overhead substantially.
 
-Even a moderately sized engineering organization using AI assistants throughout the day can generate a sustained stream of prompts, tool calls, and responses. Every interaction becomes an event that needs to be stored reliably. Losing data wasn't an option, so our architecture favored availability with eventual consistency.
+It also moved the problem rather than solving it. Instead of many small writes, every tenant was now issuing concurrent bulk writes against the same cluster. Under sustained load Elasticsearch couldn't drain them fast enough and the shared write service started exhausting resources. We'd traded a request-volume problem for a concurrency problem, and the second one was worse, because a saturated write path fails in a way that loses data while a chatty one merely wastes bandwidth.
 
-Initially, every incoming event triggered a direct write to Elasticsearch.
-
-The first optimization was straightforward. Each tenant's aggregator accumulated requests in memory and flushed them either every five seconds or after collecting one hundred events. Batching dramatically reduced network overhead and improved throughput.
-
-It also exposed a new bottleneck.
-
-Instead of many small writes, every tenant was now issuing concurrent bulk writes into the same storage layer. Under sustained load, Elasticsearch couldn't drain those requests quickly enough, and the shared write service started exhausting resources. Batching had solved the request-volume problem while exposing a concurrency problem.
-
-That's where Kafka fit naturally into the architecture.
+Kafka went in between:
 
 ```text
 Aggregator
@@ -77,43 +64,34 @@ Consumers
 Elasticsearch
 ```
 
-Incoming events were written to Kafka and partitioned by tenant, preserving ordering within each tenant's stream while absorbing traffic spikes. Consumers processed those events asynchronously and wrote them into Elasticsearch at a rate the cluster could comfortably sustain. Instead of dropping writes during peak traffic, the system now naturally buffered bursts and recovered as consumers caught up.
+Partitioning by tenant preserves ordering within a tenant's stream while absorbing bursts. Consumers write into Elasticsearch at a rate the cluster sustains, so peaks buffer instead of dropping.
 
-## Choosing the storage model
+Worth being precise about what this bought, because "we added Kafka" is not an explanation. Kafka didn't make the cluster faster. It made the ingest path's failure mode a queue depth rather than a dropped write, which is the tradeoff we wanted: we chose availability with eventual consistency, so a customer seeing their data thirty seconds late is fine and a customer not seeing it at all is not.
 
-At first glance, ClickHouse seemed like the obvious choice. We were ingesting what looked very much like logs.
+## Elasticsearch over ClickHouse
 
-But our customers weren't asking questions like *"Show me every request from yesterday."*
+ClickHouse looked like the obvious choice at first. We were ingesting something that resembled logs.
 
-They wanted to:
+But customers weren't asking "show me every request from yesterday." They wanted to search for a specific prompt, find every conversation for a user, filter sessions across several fields, and walk an interaction start to finish.
 
-* Search for a specific prompt.
-* Find every conversation for a user.
-* Filter sessions across multiple fields.
-* Navigate an interaction from start to finish.
+That's a search workload, not an analytical one. ClickHouse is excellent at scanning a column across millions of rows and it isn't what you want for "find the session containing this phrase." Elasticsearch won on the shape of the question, not on ingest characteristics.
 
-That's fundamentally a search workload rather than an analytical one, which made Elasticsearch the better fit.
+The next choice was granularity, and this one is a genuine fork.
 
-The next design decision was choosing the storage granularity.
+We store **one document per span**. Every LLM invocation and every tool call is its own document, and there is no session document anywhere in the index. A session exists only implicitly, as the set of spans sharing a session identifier.
 
-We chose to store one document per span—every LLM invocation or tool call became its own document. There was no session document anywhere in the index. A session existed only implicitly as the collection of span documents sharing the same session identifier.
+The alternative is a session-level document that accumulates token counts, models, users and metadata as spans arrive. Reads get very cheap. Every write then needs merge logic, read-before-write semantics, and concurrency handling on a document that multiple spans are racing to update.
 
-The alternative would have been maintaining a session-level document that continuously accumulated token counts, models, users, and metadata as new spans arrived. Reads become extremely cheap, but every write now requires merge logic, read-before-write semantics, and careful concurrency handling.
-
-Instead, we kept writes append-only and shifted that complexity into the query layer.
+We kept writes append-only and pushed that complexity into the query layer. I'd make the same call again for one reason: an append-only write path has no correctness bugs available to it. A merge-on-write path has several, and they'd surface as quietly wrong token counts rather than as errors.
 
 ## Reconstructing conversations at query time
 
-Since sessions weren't stored directly, the dashboard rebuilt them dynamically.
+Since sessions aren't stored, the dashboard rebuilds them.
 
-The session list grouped span documents using a `terms` aggregation on the session identifier. Nested aggregations calculated token counts, models used, span counts, and other rollups directly from the matching spans. Nothing needed to be maintained during ingestion; the dashboard computed exactly what it needed when a user queried it.
+The session list groups spans with a `terms` aggregation on the session identifier, and nested aggregations compute token counts, models used and span counts from the matching spans. Nothing is maintained at ingest; the dashboard computes what it needs when someone asks.
 
-Opening an individual session was much simpler. We filtered by session identifier and sorted the resulting spans chronologically. Since every span already contained timestamps and duration, the conversation and its execution trace naturally emerged from the ordering itself.
+Opening a session is simpler: filter by session identifier, sort spans chronologically. Every span already carries a timestamp and a duration, so the conversation and its execution trace fall out of the ordering.
 
-The two views also used different pagination strategies. Session browsing relied on `search_after` because deep offset pagination in Elasticsearch becomes increasingly expensive as the engine skips more results internally. By carrying forward the sort values of the last document instead, pagination remained efficient regardless of how far someone scrolled. Individual session views, on the other hand, were naturally bounded and didn't require that optimization.
+The two views paginate differently. Session browsing uses `search_after`, because deep offset pagination in Elasticsearch gets more expensive the further you go as the engine skips results internally. Carrying forward the last document's sort values keeps cost flat regardless of scroll depth. Individual session views are naturally bounded and don't need it.
 
-## Looking back
-
-Six agents reduced to three identity strategies, writes that stayed append-only under sustained load, and conversations reconstructed entirely at query time—that's the shape the system ended up taking.
-
-Once those pieces fit together, adding another agent became another adapter instead of another architectural problem. The ingestion pipeline stayed simple, the storage layer stayed efficient under load, and customers finally got what they were actually asking for: a searchable, navigable view of how AI was being used across their organization.
+That's the cost of the append-only decision, stated plainly: every session-list page view pays for aggregations that a session document would have precomputed. We're paying at read time on purpose, and if the session list ever becomes the slow part of the product, the fix is a materialized session document and the concurrency problems that come with it. It hasn't, so we haven't.

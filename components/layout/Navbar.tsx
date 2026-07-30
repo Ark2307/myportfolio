@@ -92,19 +92,6 @@ export default function Navbar() {
 
           {/* Right section */}
           <div className="flex items-center gap-1.5 ml-2">
-            {/* ⌘K command hint */}
-            <button
-              aria-label="Command palette"
-              className="hidden sm:flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-mono transition-all hover:opacity-80"
-              style={{
-                color: "var(--text-muted)",
-                background: "var(--surface-2)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              <Command size={10} />
-              <span>K</span>
-            </button>
 
             {/* Available status chip */}
             <div
@@ -118,7 +105,7 @@ export default function Navbar() {
                 className="w-1.5 h-1.5 rounded-full"
                 style={{ background: "var(--status-green)", animation: "bca-pulse 2s ease-in-out infinite" }}
               />
-              <span style={{ color: "var(--status-green)" }}>available</span>
+              <span style={{ color: "var(--status-green)" }}>Building</span>
             </div>
 
             {/* Theme toggle */}

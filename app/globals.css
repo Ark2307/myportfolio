@@ -42,6 +42,28 @@
   --tag-database: #10B981;
   --tag-observability: #F59E0B;
   --tag-security: #EF4444;
+  /* Cover art — per-post identity hues. Deliberately decoupled from the
+     --tag-* scale above: tags are semantic and repeat across posts, so two
+     `security` posts sharing a tag hue would draw identical covers. These are
+     eight hues spaced around the wheel (215° 187° 160° 82° 38° 350° 258° 292°)
+     so any two thumbnails differ. Mirrored as literal hex in COVER_THEME
+     (components/blog/BlogCoverArt.tsx) — SVG gradient stops and the
+     `${hue}14` alpha-suffix fills can't resolve var(). */
+  --cover-blue: #3B82F6;
+  --cover-cyan: #22D3EE;
+  --cover-emerald: #10B981;
+  --cover-lime: #A3E635;
+  --cover-amber: #F59E0B;
+  --cover-rose: #F43F5E;
+  --cover-violet: #8B5CF6;
+  --cover-fuchsia: #D946EF;
+  /* Cover art — neutral label ramp, brightest to faintest. Covers are always
+     rendered on the dark canvas regardless of site theme, so these do not
+     flip with data-theme. */
+  --cover-label: #475569;
+  --cover-muted: #64748B;
+  --cover-dim: #334155;
+  --cover-faint: #1E293B;
 }
 
 :root[data-theme="dark"] {

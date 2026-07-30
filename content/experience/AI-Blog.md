@@ -1,167 +1,54 @@
 ---
-title: "Building AI Systems: What Actually Happens When You Send a Prompt"
+title: "Nobody Tunes the Recursion Limit"
 date: "2026-07-26"
 tags: ["ai-infrastructure"]
-excerpt: "A walkthrough of what actually happens between a prompt going in and an answer coming out — prompt engineering, tokenization, RAG retrieval, planning, ReAct agents, tools, and MCP — drawn from building a vulnerability scanner and an autonomous red-teaming orchestrator."
+excerpt: "Across six agents in a vulnerability scanner, the number I spent the most time on was never a model parameter. It was recursion_limit. The fallback for hitting it exists in exactly one of the six."
 ---
 
-# Building AI Systems: What Actually Happens When You Send a Prompt
+# Nobody Tunes the Recursion Limit
 
-A developer asks an AI assistant to find every SQL injection vulnerability in a repository and explain how each one could be exploited. From where they're sitting, this looks like a single instruction. Underneath, it's anything but — that one line passes through prompt construction, tokenization, retrieval, planning, and a tool-calling loop before anything resembling an answer comes back.
+Our source-code vulnerability scanner runs about six agents. Finding global middlewares, resolving a function definition, tracing a call path: each one is the same LangGraph prebuilt ReAct loop with a different prompt and a different tool list.
 
-I've spent the last couple of years building production AI systems — a source-code vulnerability scanner, and more recently, an autonomous red-teaming orchestrator. Neither project taught me much about transformers or attention mechanisms; there's already no shortage of writing on that. What they did teach me is what actually happens in the gap between a prompt going in and an answer coming out, and how much of the real engineering work lives in that gap rather than in the model itself.
+In two years on that codebase I have changed a model parameter maybe twice. I have changed `recursion_limit` constantly, and I still don't think we have it right.
 
-That's what this post walks through.
+That number caps how many reason-act-observe cycles an agent gets before the framework kills the run. It reads like plumbing. It is the knob that decides whether an agent finds the answer, quits halfway through a call chain, or spends forty tool calls circling a file it already read.
 
-## The Journey of a Prompt
+## The cap is a property of the search space, not the model
 
-At a high level, a single request moves through a chain that looks roughly like this:
+The three that matter in our system are nowhere near each other. One agent runs comfortably in single digits. Another needs the high twenties. One particularly deep lookup is capped closer to a hundred.
 
-```
-                    User Prompt
-                         │
-                         ▼
-              Prompt Engineering
-                         │
-                         ▼
-                 Context Builder
-                         │
-       ┌─────────────────┴──────────────────┐
-       │                                     │
-       ▼                                     ▼
-Tokenization                          RAG Retrieval
-                                             │
-                                       Embeddings
-                                             │
-                                       Vector Search
-                                             │
-                                         Re-ranker
-                                             │
-                                             ▼
-                                   Retrieved Context
-                                             │
-                     ────────────────────────┘
-                         │
-                         ▼
-                     Planner
-                         │
-                         ▼
-                     ReAct Agent
-                         │
-                  Needs a Tool?
-                  │           │
-                 No          Yes
-                  │           ▼
-                  │     MCP Client
-                  │           │
-                  │     MCP Server
-                  │           │
-                  │      Tool Result
-                  └───────────┘
-                         │
-                         ▼
-                  Final Response
-```
+Same model, same framework, same ReAct implementation. The spread is entirely about how far each agent's search can legitimately spread before it should be considered lost. Middleware discovery either finds the framework's registration point in a handful of steps or it is looking in the wrong directory. Following a tainted parameter through a call graph can genuinely need thirty hops, and telling that agent to stop at ten produces a confident, wrong, half-traced answer rather than an error.
 
-Every stage in that chain is doing real work. Let's go through them one at a time.
+So there is no default worth copying. Every number here came from watching an agent fail and deciding whether it failed because it was lost or because we cut it off. That is a slow, unglamorous loop, and it produced more improvement than any prompt rewrite I've done.
 
-## 1. Prompt Engineering: Defining the Scope
+## We ship RAG without a reranker, on purpose
 
-When I started working with LLMs, I assumed the model saw exactly what the user typed. In production systems, that's rarely the case. By the time a request actually reaches the model, the application has usually built something far richer around it — a role definition, task constraints, an output format, the tools available, repository metadata, and often the reasoning carried over from earlier steps in the same session.
+Reranking is presented almost everywhere as a default stage: embed, vector search, rerank, then generate. Our retrieval layer skips it. We return top-N chunks straight off cosine distance.
 
-For the vulnerability scanner, a user might type something as simple as "find authentication vulnerabilities." Internally, that single line became one small part of a much larger structured prompt: a role ("you are an application security engineer"), explicit boundaries ("do not assume missing code"), a defined output format, and whatever context the model needed to stay grounded instead of speculating.
+I want to be clear that this is a decision and not an oversight, because the case for reranking is real. Vector search over-fetches deliberately, tuned for recall rather than precision, so some of what comes back is only loosely related to the query. Hand a model five tangential chunks alongside the two that answer the question and it does not reliably know which is which. It starts blending details across them, or asserting something that only half-appeared in the source. A reranker scores query and candidate together instead of comparing embeddings in isolation, and prunes the set down to what is load-bearing.
 
-That's the part that changed how I think about prompt engineering. It was never really about writing cleverly worded instructions. It's about narrowing the space the model is allowed to operate in, so there's less room for it to guess.
+We don't have that stage because retrieval has not been our limiting factor. Output quality in this system tracks the agent's reasoning loop far more closely than it tracks which chunks arrived. Adding a cross-encoder buys latency and another model dependency to fix a problem we are not currently having. It is the first thing I would add the moment retrieval quality becomes the bottleneck instead of the LLM, and I would be able to tell, because that failure has a signature: findings that cite the wrong file.
 
-## 2. Tokenization: The Language Models Actually Read
+Skipping a recommended stage is a defensible engineering position when you can name the metric that would reverse the decision. Skipping it because you never considered it is not.
 
-Before any of that reaches the model, it gets broken into tokens rather than passed through as raw text. A token might be a whole word, a fragment of one, a number, or a piece of punctuation — the model was trained on these units, not on strings. This is also why context windows and API pricing are measured in tokens instead of characters; the token count, not the character count, is what the model is actually working with.
+## Retrieval is a tool call, not a pipeline stage
 
-## 3. Retrieval (RAG): Giving the Model the Right Context
+The other thing we did differently is where retrieval sits. It is not a step the orchestrator runs before invoking the model. It is a tool, exposed alongside "read a file" and "query the code graph," and the agent decides when a question needs a semantic search rather than a structural one.
 
-The vulnerability scanner's hardest problem was never generating explanations — it was making sure the model looked at the right parts of the codebase before it started reasoning at all. That's the job Retrieval-Augmented Generation (RAG) does: retrieve the relevant material first, then let the model generate against it, instead of asking it to rely purely on what it picked up during training.
+What makes that work is metadata. Each repository gets its own vector collection, so a search can never pull context from an unrelated codebase. Within a collection, every chunk is stored under an id built from its file path, its position in the chunking order, and the exact line range it spans. A hit is therefore not just "this text looked similar." It is a pointer to specific lines.
 
-A production retrieval pipeline usually looks something like this: a query gets converted into an embedding, that embedding is used to pull the top candidates from a vector database, those candidates get filtered by metadata and passed through a reranker, and only the highest-scoring handful — typically five to ten documents — actually make it into the prompt.
+That matters because retrieval isn't the end of the flow here. A match becomes an observation fed back into the reasoning loop, carrying its cosine distance alongside the content, and the agent needs to act on where a result came from as much as what it says. Without the line range it would have to re-derive location from raw text, which is exactly the kind of step where a model quietly guesses.
 
-The vector database step is deliberately loose. Documents are split into chunks, and each chunk is converted into an embedding — a high-dimensional numerical representation of its meaning — using an embedding model. The user's query goes through the same embedding model, and similarity search (cosine similarity, HNSW, or approximate nearest neighbour methods, depending on the setup) pulls back whatever looks close. This first pass is tuned to maximize recall, not precision, so it tends to over-fetch on purpose.
+The related lesson, which cost us nothing to learn but is worth stating: more tools made our agents worse. A larger tool list means a larger decision space to search on every single cycle. A small, well-defined set outperformed a sprawling one, and it interacts directly with the recursion limit, because every wasted tool selection spends a cycle from the budget.
 
-That's exactly why reranking matters. Vector similarity finds documents that are *related* to a query, which isn't the same as finding the ones that actually answer it. Ask "how does JWT authentication work?" and a vector search might hand back the JWT middleware, the OAuth documentation, the auth README, the login controller, and the session management guide — all genuinely related, but not equally useful. A reranker looks at the query and each candidate document together, rather than comparing embeddings in isolation, and scores how relevant each one actually is. Depending on the system, that scoring step might be a cross-encoder model, a lightweight classifier, or even another LLM call for more complex ranking. It adds latency, but it consistently improves what actually reaches the model.
+## The part I got wrong
 
-It's worth being precise about a distinction that gets blurred a lot: semantic search and RAG aren't the same thing. Semantic search is the retrieval layer — embeddings, vector search, filtering, reranking. RAG is the full system: semantic search plus prompt augmentation, so the model generates its answer using both what it learned during training and what was just retrieved for this specific query. In the vulnerability scanner, this distinction wasn't academic — the quality of the agent's output tracked the quality of the retrieval pipeline far more closely than it tracked the choice of model. Our own retrieval layer actually skips reranking entirely and returns top-N chunks straight off cosine distance, which is a deliberate tradeoff rather than an oversight: it's fast and simple, and it's also the first place I'd add a reranking stage if retrieval quality ever became the bottleneck instead of the LLM.
+Bounding the loop is only half the job. You also have to decide what happens when an agent hits the ceiling.
 
-There's also a metadata layer doing quiet but important work underneath the embeddings themselves. Each repository gets its own vector collection, so a search never accidentally pulls context from an unrelated codebase. Within that collection, every chunk is stored under an id built from its file path, its position in the chunking order, and the exact line range it spans — so a hit in vector space isn't just "this text looks similar," it's a direct pointer back to a specific file and a specific set of lines. That distinction matters because retrieval isn't the last step here — a match becomes an observation fed straight back into the agent's reasoning loop, riding alongside its cosine distance from the query, and the agent needs to act on where a result came from as much as what it says. The whole thing is wrapped as a single callable tool rather than a manual lookup step, so the model itself decides when a question needs a semantic search instead of a structural one, and the metadata attached to each hit is what lets it jump straight to the right lines afterward instead of re-deriving location from raw text.
+Right now, exactly one of our six agents wraps its execution step in a fallback. If it throws for exceeding the recursion or context limit, it gets re-invoked with a "summarize what you have" prompt, so it still returns something structured instead of nothing.
 
-Worth knowing about even outside this specific pipeline: where a reranking stage does exist, it earns its keep mainly by cutting down hallucination, not just by improving relevance scores. Vector search over-fetches on purpose, so some of what it pulls back is only tangentially related to the query. Hand a model five loosely-related chunks alongside the two that actually answer the question, and it doesn't reliably know which is which — it can start blending details across chunks, or stating something with confidence that only half-appeared in the source. A reranker sitting between retrieval and generation prunes that noise down to the handful of chunks that are actually load-bearing, so the model ends up reasoning over signal instead of picking a path through clutter. That's a cheap lever against a specific, common failure mode, which is why reranking shows up as a near-default in production RAG systems even in cases like this one, where it wasn't the right tradeoff to add.
+The other five don't. They fail silently to an empty response.
 
-## 4. Planning: Breaking a Large Problem Down
+That is not a design decision, it is drift. The pattern was written once, copied across six call sites, and then improved in one of them. Nobody removed the safety behavior from the other five; it just never existed there, and an empty response looks enough like a clean negative result that it went unnoticed for a long time. An agent that finds no vulnerabilities and an agent that died at step 27 return the same thing to the caller.
 
-Even with the right context in hand, complex problems don't hold up well to a single model call. This is where agent frameworks like LangGraph earn their keep — instead of asking the model to solve everything in one shot, the problem gets broken into smaller, executable steps.
-
-Even with the right context in hand, complex problems don't hold up well to a single model call. This is where agent frameworks like LangGraph earn their keep: instead of asking the model to solve everything in one shot, the goal gets decomposed up front into a sequence of concrete steps, and the model works through them one at a time instead of trying to reason about the whole problem at once.
-
-In the vulnerability scanner, that decomposition looks like: find the backend directories, detect the framework and language, find the global middlewares, then work through each API in turn. Some of those steps turn out to need further steps of their own once the agent actually starts working through them — but that's a separate problem from planning itself, and it's what ReAct, below, is built to handle.
-
-## 5. ReAct: Reason, Act, Observe, Repeat
-
-The reasoning loop behind most modern agents follows the ReAct pattern — reason, then act, then observe, then repeat. Where planning decides the sequence of steps up front, ReAct decides, moment to moment inside a step, what to do next given what's just come back: which tool to call, what the result means, and whether that's enough to move on.
-
-In LangGraph, this is the framework's own prebuilt ReAct agent. Given a set of tools — read a file, query the code graph, search the vector index — the model picks one, reads what it returns, and loops until it's satisfied or the current step is done. We reuse this same shape across roughly half a dozen agents in the scanner, each just swapping in a different prompt and tool list for its specific job: finding middlewares, resolving a function definition, tracing a call path.
-
-The lesson that mattered most here was that none of these loops can be left unbounded, and tuning the limit turned out to be more art than science. One agent runs comfortably within single digits, another needs the high twenties, and one particularly deep lookup is capped closer to a hundred, depending on how far that agent's search space can realistically spread. Bounding the loop isn't enough on its own, either — you also have to decide what happens when it hits that ceiling. Right now, exactly one of these agents wraps its execution step in a fallback: if it throws for hitting the recursion or context limit, it gets re-invoked with a "just summarize what you have" prompt, so it still returns something structured instead of failing outright. The rest don't have that yet — they fail silently to an empty response instead. Which is its own lesson: a pattern copy-pasted across six call sites tends to drift, and a safety behavior you add in one place quietly doesn't exist in the other five until you go looking for it.
-
-## 6. Tools: Extending What an LLM Can Do
-
-On its own, an LLM can only reason over whatever's already in its context window. It can't inspect a repository, query a database, hit an API, or read your docs — tools are what give it access to any of that: reading files, executing SQL, searching documentation, calling other APIs, querying vector databases, even invoking another agent.
-
-The counterintuitive lesson here is that more tools don't make a better agent. Hand an agent fifty tools and it usually gets slower and less reliable, simply because the decision space it has to search gets much bigger. A small, well-defined set of tools tends to outperform a sprawling one by a wide margin.
-
-## 7. MCP: A Standard Way to Expose Tools
-
-When an agent decides it needs something external, it doesn't reach into code directly — it talks to an MCP (Model Context Protocol) server. MCP is an open protocol from Anthropic that standardizes how AI clients discover and invoke external capabilities, built on top of JSON-RPC 2.0.
-
-The client first asks what the server can do:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "method": "tools/list"
-}
-```
-
-And gets back something like:
-
-```json
-{
-  "result": {
-    "tools": [
-      {
-        "name": "read_file",
-        "description": "Read a file from disk",
-        "inputSchema": {
-          "type": "object",
-          "properties": {
-            "path": { "type": "string" }
-          }
-        }
-      }
-    ]
-  }
-}
-```
-
-Once the model picks a tool, the client invokes it through `tools/call`. Beyond tools, MCP servers can also expose resources (read-only context like docs or config), prompts (reusable templates a client can request), and sampling — a newer capability that lets a server request additional model generations as part of a controlled workflow. Part of why MCP has caught on as fast as it has is that it removes the need for every IDE or framework to invent its own tool interface — they all speak the same protocol instead.
-
-## 8. LangChain and LangGraph
-
-On the vulnerability scanner, we leaned on both LangChain and LangGraph, and even though they're usually mentioned in the same breath, they're solving different problems. LangChain provides the higher-level building blocks — prompt templates, document loaders, embeddings, retrievers, output parsers. LangGraph sits a layer above that, modeling AI workflows as graphs with nodes, edges, shared state, and cycles, which makes planners, multi-agent systems, and long-running reasoning loops far easier to build than they'd be as a single sprawling prompt. In practice, most production agents benefit far more from explicit workflow orchestration than from an increasingly elaborate prompt trying to do the same job.
-
-## 9. What the Second Project Taught Me
-
-The vulnerability scanner taught me how agents reason. The red-team orchestrator taught me how to make them reliable — and that turned out to be a different set of problems entirely: context management, prompt design, guardrails, tool reliability, evaluation. Building AI systems, I've come to think, was never really about picking a better model. It's about designing a system that keeps behaving predictably even when the model underneath it doesn't.
-
-## Final Thoughts
-
-The biggest thing I've taken from the last couple of years is that an AI application is a lot more than an LLM with a nice prompt. It's retrieval pipelines, planners, tools, protocols, validation layers, orchestration, and guardrails, all working together — the model is just one component in that stack, and often not the hardest one to get right.
-
-As models keep improving, I don't think the edge is going to come from calling a slightly more powerful API. It's going to come from building better systems around whatever model you're using. That's the part of this work I find genuinely interesting.
+The fix is not interesting. The reason it went undetected for months is: we had bounded every loop, so the box was checked, and we never asked what the boundary did when it was reached. Reliability work has this shape more often than not. The guard gets built, the guard gets copied, and the copies quietly stop being guards.

@@ -2,7 +2,7 @@
 title: "Building an AI Security Engineer Before Coding Agents Could Do It"
 date: "2025-10-20"
 tags: ["security", "ai-infrastructure"]
-excerpt: "How I built a hybrid static-analysis + semantic-search + LLM pipeline to automatically find vulnerabilities in source code — and why none of it was really a model problem."
+excerpt: "A hybrid static-analysis, semantic-search and LLM pipeline for finding vulnerabilities in source code, built in 2024 because no model could do it alone. We retired it a year later because they could."
 ---
 
 # Building an AI Security Engineer Before Coding Agents Could Do It
@@ -11,39 +11,27 @@ excerpt: "How I built a hybrid static-analysis + semantic-search + LLM pipeline 
 
 ---
 
-Onboarding a new customer to our API security platform often took more than a week, because we first had to wait for production traffic.
+Onboarding a customer to our API security platform took more than a week, because we had to wait for their production traffic to reach us first.
 
-Working at an AI-powered API security startup, that delay was the whole problem — and fixing it turned into something far more interesting than it first appeared.
+Our platform discovered APIs from live traffic and analyzed them for vulnerabilities. That worked well once traffic flowed. Getting there was the problem: customers had to involve DevOps, configure networking, clear compliance review on production traffic, and then wait for enough requests to accumulate. One to two weeks before a first vulnerability report, and for services with non-trivial auth setups, another two to three days to map the authentication context correctly.
 
-Our platform continuously discovered APIs from production traffic and analyzed them for security vulnerabilities. It worked well once traffic started flowing, but onboarding new customers was slow. Before a customer saw their first vulnerability report, they typically had to involve DevOps teams, configure networking, complete compliance reviews around production traffic, and wait for enough requests to reach our platform. In practice, that meant one to two weeks just to start seeing real-time traffic — and for services with non-trivial auth setups, mapping the authentication context correctly could add another two to three days on top of that.
+So: skip the traffic. Analyze the source directly and produce findings in minutes.
 
-We wanted a different onboarding experience. Instead of waiting for runtime traffic, what if we could analyze the source code directly and produce meaningful security findings within minutes?
+That split into two independent problems, discovering APIs from source and discovering vulnerabilities from source. I worked on the second.
 
-That immediately split the project into two independent problems: discover APIs from source code, and discover vulnerabilities from source code. I worked on the second.
+## The first prototype failed
 
-At first glance, it sounded like a perfect use case for an LLM. It wasn't.
+The obvious version first: hand the repository to an LLM and ask it to find vulnerabilities. The answers looked plausible and were not reliable enough to put in front of a customer.
 
----
+We blamed context limits, since production repositories didn't fit in the context windows available then. That turned out to be the wrong diagnosis.
 
-## The First Prototype Failed
+Security reasoning is distributed by nature. A single request passes through authentication middleware, authorization checks, controllers, services, repositories, database queries, sometimes a message bus, before it returns. No individual file holds enough information to answer *"is this endpoint vulnerable to Broken Object Level Authorization?"* Authentication happens in one middleware, ownership validation inside a service, database access somewhere else. Even with the whole repository in the prompt, expecting a model to reconstruct execution paths across thousands of files was unrealistic.
 
-The first solution was the obvious one: give the repository to an LLM, ask it to find vulnerabilities. The model produced plausible-looking answers, but they weren't reliable enough to build a product around.
+So the bottleneck was retrieval, not capacity. The repository already contained every answer we needed. The work was collecting the right evidence before asking the model anything.
 
-Initially, we blamed context limits — production repositories simply didn't fit into the available context windows. But after experimenting more, we realized context length wasn't actually the biggest issue.
+## Designing around how code executes
 
-The real problem was that security reasoning is inherently distributed. A single API request passes through authentication middleware, authorization checks, controllers, services, repositories, database queries, and sometimes messaging systems before returning a response. No single file contains enough information to answer a question like *"Is this endpoint vulnerable to Broken Object Level Authorization?"* Authentication might happen in one middleware, ownership validation inside a service, database access somewhere else entirely. Even if the entire repository fit inside a prompt, expecting a model to reconstruct execution paths across thousands of files was unrealistic.
-
-The problem wasn't context. The problem was information retrieval. Instead of asking the model to understand an entire repository, we needed to reconstruct only the execution path relevant to a particular API.
-
-The repository already contained every answer we needed. The challenge wasn't generating new knowledge — it was collecting the right evidence before asking the model to reason.
-
-That became the guiding principle behind the entire architecture.
-
----
-
-## Designing Around How Code Actually Executes
-
-One decision simplified almost everything that followed: instead of treating a repository as a collection of files, we decided to analyze it the same way a request flows through an application.
+One decision simplified everything after it: analyze a repository the way a request flows through it, rather than as a collection of files.
 
 ```
                     Repository
@@ -67,49 +55,29 @@ One decision simplified almost everything that followed: instead of treating a r
         Vulnerability-Specific Analysis
 ```
 
-Every stage existed to reduce uncertainty before the next one ran. "Collect Security Evidence" was where the system gathered the concrete facts a vulnerability check would need — which sinks were reachable, which validations ran, in what order — so the final reasoning step wasn't guessing from scratch.
+Every stage exists to reduce uncertainty before the next one runs. "Collect Security Evidence" is where the system gathers the concrete facts a check will need: which sinks are reachable, which validations ran, in what order.
 
-By the time an LLM was asked whether an endpoint was vulnerable, the system already knew which framework the project used, how authentication was implemented, which middleware ran before the controller, where sensitive sinks existed, and which parts of the codebase actually mattered. Rather than making one large reasoning call, we broke the problem into several much smaller ones. That single shift improved both accuracy and cost.
+By the time an LLM was asked whether an endpoint was vulnerable, the system already knew the framework, how authentication was implemented, which middleware ran before the controller, where the sensitive sinks were, and which parts of the codebase were irrelevant. Rather than one large reasoning call we made several small ones, each with a narrower question to answer. That improved accuracy and cost at the same time, which is rare enough to be worth noticing.
 
-The hard part wasn't making the model smarter. It was asking it smaller questions.
+## Two halves, neither sufficient
 
----
+Our first instinct was traditional static analysis. With code property graphs we could answer structural questions deterministically: where is this method defined, which functions call it, can user-controlled data reach a dangerous sink. For taint analysis and call-graph traversal it's hard to beat.
 
-## Static Analysis Solved Half the Problem
+Security isn't only structural, though. Suppose a repository has fifteen middleware implementations. Static analysis finds all fifteen. Which one authenticates users is a semantic question, and a code property graph has nothing to say about it.
 
-Our first instinct was to lean heavily on traditional static analysis. Using code property graphs, we could answer structural questions with high confidence: where is this method defined, which functions call it, can user-controlled data reach a dangerous sink, what does the control flow look like. Those answers are deterministic, and for problems like taint analysis and call-graph traversal, static analysis is extremely effective.
+So we tried the opposite: index the repository semantically and let an LLM reason over what came back. Retrieval got much better; searching for "authentication middleware" or "JWT validation" became easy. But semantic similarity doesn't model execution. Two functions can look nearly identical and behave completely differently, and ownership validation might happen three calls before the database is touched. Embeddings retrieve related code, they don't reconstruct a path through it.
 
-Unfortunately, security isn't only about structure. Suppose a repository contains fifteen middleware implementations. Static analysis can identify every one of them. It cannot reliably answer which one actually authenticates users — that's not a structural question, it's a semantic one. Static analysis understands syntax. It doesn't understand intent.
+Each approach covered exactly what the other missed, which is why the architecture only started working once we stopped choosing between them. The final system runs static analysis for structural questions, semantic search for retrieval, and an LLM reasoning over the evidence both collected.
 
----
-
-## LLMs Solved the Other Half
-
-Naturally, we explored the opposite direction: index the repository semantically and let an LLM reason over retrieved code. That solved retrieval remarkably well — searching for "authentication middleware" or "JWT validation" became straightforward.
-
-But semantic similarity doesn't understand execution. Two functions can look almost identical while behaving completely differently, and ownership validation might happen three function calls before a database query. Embeddings retrieve related code; they don't reconstruct execution paths.
-
-Neither approach solved the whole problem on its own. One understood structure. The other understood intent. The architecture only started making sense when we stopped choosing between them.
-
----
-
-## A Hybrid Architecture
-
-The final system combined three complementary capabilities: static analysis answered structural questions, semantic search answered retrieval questions, and an LLM reasoned over the evidence both systems collected.
-
-Instead of asking the model to explore an entire repository, we asked it much smaller, well-scoped questions — does this middleware authenticate users, is ownership validated before the database is reached, does user-controlled input reach a dangerous sink, is authentication missing entirely. The model became a reasoning engine instead of a search engine, and that distinction made a bigger difference than any single prompt-engineering trick we tried.
+The model got small, well-scoped questions. Does this middleware authenticate users. Is ownership validated before the database is reached. Does user-controlled input reach a dangerous sink. Moving the model from search to reasoning did more for output quality than any prompt-engineering change we tried.
 
 AI wasn't replacing static analysis. Static analysis was teaching AI where to look.
 
----
+## Middleware discovery had to become an agent
 
-## Middleware Discovery Became an Agent
+I expected middleware discovery to be another sequential stage. It couldn't be.
 
-One particularly interesting problem was middleware discovery. I initially expected this to be another sequential pipeline. It wasn't.
-
-Every framework organizes middleware differently. Some projects have one authentication layer; others distribute security checks across decorators, filters, shared libraries, and helper functions. There isn't a fixed number of steps required to answer "how is authentication implemented in this repository?" — so this wasn't a pipeline problem, it was a search problem.
-
-Instead of hardcoding every possibility, we built an iterative planning loop:
+Every framework organizes middleware differently. Some projects have a single authentication layer; others spread security checks across decorators, filters, shared libraries and helpers. There is no fixed number of steps that answers "how is authentication implemented in this repository?" That makes it a search, and searches need a loop.
 
 ```
              User Goal
@@ -133,52 +101,40 @@ Instead of hardcoding every possibility, we built an iterative planning loop:
   Return Findings ◄────────┘
 ```
 
-Each iteration gathered more evidence. The planner decided what was still missing, the executor collected it, and the evaluator decided whether confidence was high enough to stop or another pass was needed. Looking back, we had essentially built an AI agent before "AI agents" became the industry's favorite buzzword — not because they were trendy, but because the problem genuinely required iterative reasoning.
+Each iteration gathers more evidence. The planner decides what's still missing, the executor collects it, the evaluator decides whether confidence is high enough to stop. We had built an agent, in 2024, because the problem required iterative reasoning rather than because agents were interesting.
 
----
+## Caching summaries, not source
 
-## Reading Execution Paths Instead of Files
+Real business logic rarely lives in controllers. Controllers call services, services call repositories, repositories hit databases, and validation happens somewhere in between. Walking that call graph recursively blew past practical context limits fast.
 
-Real business logic rarely lives inside controllers. Controllers call services, services call repositories, repositories call databases, and validation happens somewhere in between. Walking that call graph recursively quickly exceeded practical context limits.
+So we cached structured summaries of what each function did, rather than its source. When another API traversed the same function, the system reused the summary.
 
-Instead of caching raw source code, we cached structured summaries describing what each function actually did. Whenever another API traversed the same function, the system reused the summary instead of re-reading the implementation.
+That changed how the system scaled: context usage grew with the number of unique execution paths rather than with repository size, so reasoning could go several layers deeper without cost exploding.
 
-Caching structured summaries changed how the system scaled. Context usage grew with the number of unique execution paths, not with the size of the repository — so reasoning could go several layers deeper without the cost exploding the way raw-code traversal would have. The system accumulated knowledge, not code.
+## Tradeoffs
 
----
+Every one of these went a specific direction, and I'd defend all four.
 
-## Engineering Tradeoffs
+**Static analysis against LLM reasoning.** Deterministic but rigid, against flexible but probabilistic. We ran both, and let the planner decide which was authoritative at each step.
 
-This project taught me that AI systems are usually engineering problems disguised as model problems. Every architectural decision involved a tradeoff.
+**Precision against recall.** Code property graphs return precise structural answers; semantic search deliberately over-fetches. Which one mattered depended on the question, so that choice moved into the planner rather than being made once at design time.
 
-**Static analysis vs. LLM reasoning.** Static analysis was deterministic but rigid. LLMs were flexible but probabilistic. Combining them produced significantly better results than either alone.
+**Context size against reasoning depth.** Raw source preserves detail and exhausts the window. Summaries lose fidelity and let you go deeper. We optimized for depth over completeness, knowingly, which means the system could miss something a full-fidelity read would have caught.
 
-**Precision vs. recall.** Code property graphs produced precise structural answers. Semantic search intentionally optimized for recall. The planner decided which one mattered more at each step of reasoning.
+**Fixed pipelines against adaptive workflows.** Rigid workflows assume repositories follow conventions. They don't. Iterative planning cost us determinism and bought resilience across languages and frameworks.
 
-**Context size vs. reasoning depth.** Raw source code preserved detail but exhausted context windows fast. Summarizing execution paths sacrificed some fidelity in exchange for much deeper repository traversal — we deliberately optimized for depth over completeness.
+## Did it work
 
-**Fixed pipelines vs. adaptive workflows.** Traditional automation assumes every repository follows similar conventions. Real-world codebases don't. Replacing rigid workflows with iterative planning made the system far more resilient across languages and frameworks.
+We already had a runtime-analysis engine backed by roughly a thousand OWASP API Top 10 test cases, so both approaches could be measured against the same benchmark. The traffic-based approach surfaced plenty of findings and enough false positives that triage became its own chore. Every finding needed a human to confirm before anyone would act on it.
 
----
+The source-code system was built to avoid that: a finding had to be backed by a reconstructed execution path, not a pattern match against traffic shape. Against the same library it surfaced 70% more valid vulnerabilities, with no false positives on that benchmark.
 
-## Did It Actually Work?
+I want to be careful about that second number, because "zero false positives" is a strong claim and the scope of it is narrow. That benchmark is a controlled test library where the ground truth is known. It is not customer traffic, and it does not mean the system produced no false positives in production. What it does mean is that requiring a reconstructed execution path as evidence eliminated the class of false positive the traffic-based system generated, which was the specific problem we set out to fix.
 
-Because we already had a runtime-analysis engine backed by roughly a thousand OWASP API Top 10 test cases, we could compare both approaches using exactly the same benchmark. Running those same test configurations against real traffic surfaced plenty of findings, but also enough false positives that triaging results became its own chore — every finding still needed a human to confirm it was real before anyone would act on it.
+## How it ended
 
-The source-code system was built specifically to avoid that failure mode: findings had to be backed by an actual reconstructed execution path, not a pattern match against traffic shape. Measured against the same test library, it surfaced 70% more valid vulnerabilities than the traffic-based approach — with zero false positives. Fewer results to distrust, more that were worth acting on immediately.
+When we built this in 2024, foundation models struggled with repository-scale reasoning. Context windows were smaller, tool use was unreliable, and understanding code across files required real orchestration. A custom reasoning pipeline wasn't an optimization, it was the only way to do it.
 
-That gap is really the entire argument of this post in one data point. The traffic-based system was reasoning over surface patterns. The source-code system was reasoning over execution paths grounded in evidence. The second kind of reasoning doesn't just feel more rigorous — it measurably was.
+That changed within a year. Models got much better at navigating repositories, reasoning across files, invoking tools and holding long context. Coding agents went from autocomplete to systems that natively did most of the exploration our pipeline was built to do.
 
----
-
-## Looking Back
-
-Perhaps my favorite part of this project is how it ended.
-
-When we built this system in 2024, foundation models struggled with repository-scale reasoning. Context windows were smaller, tool use was unreliable, and understanding code across multiple files required substantial orchestration. Building a custom reasoning pipeline wasn't an optimization — it was the only practical way to solve the problem at all.
-
-Over the following year, that changed quickly. Models got dramatically better at navigating repositories, reasoning across files, invoking tools, and holding long-context understanding. Coding agents evolved from intelligent autocomplete into systems that naturally performed much of the exploration our pipeline had been custom-built to do.
-
-As the models improved, the tradeoffs changed with them. Maintaining a sophisticated orchestration layer no longer justified its own complexity, and eventually we retired the feature from production — not because it failed, but because the ecosystem had caught up to it.
-
-Good systems aren't meant to last forever. They're built to solve the constraints of their time. When the technology evolves enough that a simpler solution replaces them, retiring complexity isn't failure. It's progress.
+The tradeoffs moved with them. Maintaining the orchestration layer stopped justifying its complexity, and we retired the feature from production. Not because it failed, because the constraint it was designed around stopped existing.

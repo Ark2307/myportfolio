@@ -2,54 +2,34 @@
 title: "Kafka, Parallel Consumers, and the 6-Hour Testing Bottleneck"
 date: "2026-05-25"
 tags: ["distributed-systems", "observability"]
-excerpt: "How I redesigned a Kafka consumer architecture to achieve 100x throughput improvement — eliminating offset safety bugs, rebalance storms, and crash recovery failures in a production API security testing pipeline."
+excerpt: "We were running 70,000 security tests in about 6 hours on a shared queue, and I was explicitly not allowed to solve it by adding machines. What that constraint forced was per-message offset tracking, a hard 4-minute timeout, and a state file on disk."
 ---
 
-At one point, our API security testing pipeline had become the single biggest bottleneck in our entire platform.
+# Kafka, Parallel Consumers, and the 6-Hour Testing Bottleneck
 
-We were executing nearly **70,000 deep security tests** in a single run, and it was taking almost **6 hours**. To make matters worse, this was a shared execution queue across all customers. One massive test suite from a single enterprise client would back up the line, skyrocketing wait times for everyone else.
+Our API security testing pipeline was the biggest bottleneck on the platform. A single run executed close to **70,000 deep security tests** and took roughly **6 hours**, on an execution queue shared across all customers. One enterprise client's suite would back up the line and every other customer's wait time went up with it.
 
-The textbook solution? Horizontal scaling. Spin up isolated worker pools per customer, migrate to a completely distributed job-based architecture, and auto-scale aggressively.
+The standard answer is horizontal scaling: isolated worker pools per customer, a distributed job architecture, aggressive autoscaling. I wasn't allowed to do that, because the infrastructure bill would have gone up roughly in proportion to the speedup, and the whole point was to not pay that.
 
-But that came with a massive catch: infrastructure costs would explode.
+That constraint is what makes this worth writing about. Being told to make it faster without adding machines meant the only lever left was how much work a single consumer could safely have in flight, and every problem below follows from pulling that lever.
 
-Instead of throwing money and machinery at the problem, I was challenged to **scale smarter**. That constraint led us down a deep engineering rabbit hole involving Kafka consumer internals, thread orchestration, offset safety, and stateful crash recovery.
-
-By rethinking our execution model from scratch, we improved throughput by nearly **100x**. Here is how we built it.
-
-## The Core Subsystem Challenge
-
-Our testing engine executes real API security attacks. Each individual test follows a strict lifecycle:
+## What one test does
 
 ```
 [Pick Endpoint] → [Apply Attack Payload] → [Wait for Response] → [Analyze Behavior] → [Store Findings]
 ```
 
-This looks straightforward, but the operational reality is highly unpredictable. Some endpoints respond instantly. Some take 30 seconds. Others simply hang forever.
+The lifecycle is simple; the timing distribution isn't. Some endpoints respond in milliseconds, some take 30 seconds, some never respond. That tail is the entire engineering problem.
 
-Sequential execution was fundamentally broken at our scale. To survive, our engine required:
+Kafka was already the backbone: durable, replayable, partitioned. The question was never how to consume faster. It was how to run thousands of long-running unpredictable tasks concurrently without breaking Kafka's offset guarantees.
 
-- **Massive concurrency** — thousands of tests running simultaneously
-- **Strict timeout controls** — one hung endpoint cannot block everything else
-- **Bulletproof crash safety** — a pod death cannot lose results or duplicate them
-- **Zero duplicate findings** — users lose trust instantly if the same vulnerability appears multiple times
+## Concurrency versus offset safety
 
-Kafka felt like the natural backbone for this architecture. It gave us a durable queue, replayability, and partition-based consumption. But once we moved past basic tutorial-level use cases, we hit a wall.
+The obvious approach is to consume a batch, hand it to a thread pool, and commit the highest offset. It works until a pod dies mid-batch.
 
-The challenge wasn't consuming messages faster. The challenge was: **how do you safely execute thousands of long-running, unpredictable tasks in parallel without breaking Kafka's offset guarantees?**
+Say 100 tests are in flight, 70 finished, 30 still running, and the pod takes an OOM kill. Commit early and the 30 incomplete tests are gone. Commit late, after the batch, and the 70 finished tests re-execute on restart. On a security platform that means the same vulnerability reported twice, inflated counts, and a report the customer stops trusting.
 
-## Problem 1: Concurrency vs. Offset Safety
-
-The naive way to parallelize a Kafka consumer looks like this: consume a batch of records, hand them off to a local thread pool, and commit the highest offset.
-
-This works beautifully — until a worker pod crashes mid-batch.
-
-Imagine 100 tests running concurrently. 70 finish in seconds, but 30 are still grinding away. Suddenly, the pod suffers an OOM kill or a node eviction.
-
-- **If you commit offsets early:** The 30 incomplete tests are lost forever.
-- **If you commit offsets late** (after the whole batch finishes): The 70 completed tests will re-execute on restart. In a security platform, duplicate executions mean duplicate findings, inaccurate vulnerability counts, and corrupted reports.
-
-Instead of writing complex custom offset-tracking logic across worker threads, we brought in **Confluent's Parallel Consumer library**.
+Both options are wrong because the batch is the wrong unit. Commits need to be per-message, and hand-writing that tracking across worker threads is a lot of state to get right. We used **Confluent's Parallel Consumer** instead:
 
 ```java
 ParallelConsumerOptions<String, String> options =
@@ -61,19 +41,15 @@ ParallelConsumerOptions<String, String> options =
         .build();
 ```
 
-The magic of the Parallel Consumer is that it internally tracks records on a **granular, per-message level**. It handles out-of-order completions seamlessly. If task #50 finishes before task #40, the library tracks that gap and safely handles the underlying Kafka commits.
+The library tracks completion per record rather than per batch, so out-of-order completion is fine. If record 50 finishes before record 40, it holds the gap and only advances the committed offset to where it's genuinely safe. Choosing `UNORDERED` is a real tradeoff: we gave up per-partition ordering, which we could afford because each test is independent, and got the ability to let fast tests complete without waiting behind slow ones.
 
-By delegating execution tracking to the library, an entire category of distributed state bugs disappeared overnight.
+## Hanging endpoints, and why the timeout is the important number
 
-## Problem 2: Hanging APIs Destroying Throughput
+The thing that hurt throughput wasn't expensive processing, it was unresponsiveness. Broken customer gateways, endpoints that accept a connection and then never reply.
 
-In production, our biggest enemy wasn't heavy processing — it was **unresponsiveness**. Some customer gateways were broken; some test endpoints simply never responded.
+With a concurrency limit of 100, it takes exactly 100 hung endpoints to occupy the pool completely. Throughput reaches zero and stays there. Kafka can't help with this; it's an application concern.
 
-Without strict timeout enforcement, a worker thread would block indefinitely. If you have a concurrency limit of 100, it only takes 100 hung endpoints to fully occupy your thread pool. Throughput collapses to zero, and the entire pipeline stalls.
-
-Kafka cannot fix this. The application orchestration layer must handle it.
-
-We wrapped every test execution inside a **timed Future**:
+Every execution is wrapped in a timed future:
 
 ```java
 Future<?> future = executor.submit(() -> runTest(message));
@@ -86,82 +62,60 @@ try {
 }
 ```
 
-If an API crossed the 4-minute threshold, the task was forcefully cancelled, the thread released back to the pool, and an explicit `TEST_TIMED_OUT` result persisted.
+Past four minutes the task is cancelled, the thread returns to the pool, and an explicit `TEST_TIMED_OUT` result is persisted. Persisting it matters as much as the cancellation: customers need to see which tests timed out so they can go look at their own gateway, and a silent drop would have looked like a clean pass.
 
-This visibility was crucial. We didn't want silent failures. Users needed to see exactly which tests timed out so they could diagnose their own network or gateway issues. Most importantly, **one slow endpoint could no longer poison the well** for the rest of the execution engine.
+Something worth being precise about, because it's the part I got wrong when reasoning about this early on: the 4-minute timeout constrains wall-clock more than `maxConcurrency` does. Concurrency moves the ceiling, from one test at a time to a hundred. What you actually realize against that ceiling is bounded by the slowest item in the run. A single unbounded hang means the run never finishes regardless of how much parallelism you configured, so the timeout isn't a safety net bolted on beside the concurrency change. It's the thing that makes the concurrency change mean anything.
 
-## Problem 3: The Dreaded Kafka Rebalance Storms
+## The rebalance storm
 
-This is one of the most common pitfalls when dealing with long-running tasks in Kafka.
+A standard consumer has to call `.poll()` within `max.poll.interval.ms`. Exceed it and Kafka concludes the consumer is dead, revokes its partitions, and rebalances. Our tests ran for minutes, so to Kafka our consumer looked dead constantly: continuous rebalancing, partition thrashing, duplicate processing, throughput collapse.
 
-A standard Kafka consumer expects your application to continuously invoke `.poll()` within a window defined by `max.poll.interval.ms`. If your processing logic takes longer than this interval, Kafka assumes the consumer node has died. It triggers a **rebalance**, revokes your partitions, and hands them to another node.
+The Parallel Consumer decouples heartbeating from execution. A lightweight background thread keeps the session alive while worker threads run long tasks independently. Through 4-minute attack simulations the group stayed stable.
 
-Because our security tests could run for several minutes, our worker threads were deeply occupied. To Kafka, our consumer looked dead.
+Worth noting what the fix is *not*, because raising `max.poll.interval.ms` is what everyone reaches for first. Raising it makes Kafka wait longer before declaring a genuinely dead consumer dead, trading a rebalance problem for a stuck-partition problem. The generalized version is in [You Don't Need Kafka Internals. You Need Four of Them.](/blog/kafka)
 
-The result was operational chaos: endless rebalances, partition thrashing, duplicate processing, and total throughput collapse.
+## Two ways to stop, kept separate on purpose
 
-The Parallel Consumer library architecture elegantly solves this by **decoupling message heartbeating from message execution**. A dedicated lightweight background thread continuously communicates with the Kafka broker to keep the session alive, while our worker threads execute long-running tests independently.
-
-Even during 4-minute attack simulations, Kafka remained perfectly stable. No unnecessary rebalances, no partition movement.
-
-## Problem 4: Graceful Drain vs. Hard Interrupts
-
-A testing run can conclude in three ways: it completes naturally, it hits a global execution timeout, or a user explicitly clicks "Cancel."
-
-Treating these scenarios identically was an early operational mistake. If we always force-killed threads, valid in-flight results were lost. If we always waited gracefully, a user-initiated cancellation would hang for minutes.
-
-We split the termination lifecycle into two explicit paths:
+A run ends by completing, by hitting a global timeout, or because a user clicked Cancel. Treating those identically was an early mistake: force-killing always lost valid in-flight results, and draining always meant a user-initiated cancel hung for minutes.
 
 ```java
 if (isCancelled || maxTimeExceeded) {
-    // Hard Interrupt: Users expect immediate responsiveness
+    // Hard interrupt: the user is waiting on this
     executor.shutdownNow();
 } else {
-    // Graceful Drain: Ensure all active work finishes cleanly
+    // Graceful drain: let active work finish
     executor.shutdown();
     executor.awaitTermination(5, TimeUnit.MINUTES);
 }
 ```
 
-Natural completions preserve data integrity. Manual cancellations feel instantaneous to the end-user.
+Natural completion preserves data. Manual cancellation feels immediate. Those are different requirements and they get different code paths.
 
-## Problem 5: The Sneaky Startup Race Condition
+## The startup race
 
-This was the most subtle bug in the system. At startup, before Kafka has successfully established a connection and delivered the first batch of records, the consumer evaluates its state.
-
-A naive implementation looks at the queue, sees that `parallelConsumer.workRemaining() == 0`, and interprets it as: "The queue is empty, all work is done." The application shuts down before processing a single message.
-
-A tiny race condition leading to catastrophic production failures where worker pods would instantly crash-loop on startup.
-
-The fix was elegantly simple: an `AtomicBoolean` flag.
+The subtlest bug in the system. At startup, before Kafka has connected and delivered the first batch, the consumer evaluates its own state. A naive implementation sees `parallelConsumer.workRemaining() == 0`, reads it as "queue drained, work done," and shuts down before processing anything. In production that presented as worker pods crash-looping on boot.
 
 ```java
 AtomicBoolean firstRecordRead = new AtomicBoolean(false);
 ```
 
-We updated the shutdown condition to only activate after at least one record had been successfully read from the broker. One line of code eliminated an entire class of initialization failures.
+The shutdown condition only activates after at least one record has been read. It's a one-line fix, and I'm including it because the class of bug is worth recognizing: "empty" and "not yet started" are different states, and any check that conflates them will fire during startup.
 
-## The Real Engineering Challenge: Stateful Crash Recovery
+## Crash recovery across two phases
 
-Optimizing concurrency within a healthy JVM is one thing. Ensuring that concurrency **survives a sudden container crash** is where real engineering happens.
+Concurrency inside a healthy JVM is the easy half. Surviving a container crash is the rest of it.
 
-Our pipeline uses a two-phase architecture executing inside the same container:
+The pipeline runs two phases in the same container:
 
 ```
 [Producer Phase: Generates Test Jobs] → [Consumer Phase: Executes via Kafka]
 ```
 
-If a pod was evicted or restarted during a massive run, we faced a critical question: on restart, how do we know where we left off?
+If the pod is evicted mid-run, restart has to know where it stopped. Without that, the producer phase runs again, pushes duplicate jobs into Kafka, and double-writes to MongoDB.
 
-Without state recovery, the producer phase would execute again, pushing duplicate jobs into Kafka, causing corrupted summaries and double-writes to MongoDB. We engineered a **two-layer recovery model**.
+**In memory,** a thread-safe singleton (`TestingConfigurations.getInstance()`) loads attack configuration once at startup so 100 worker threads read from shared memory instead of each querying MongoDB.
 
-### Layer 1: Singleton Configuration State (In-Memory)
-
-To prevent 100 concurrent worker threads from hammering MongoDB to independently fetch attack configurations, we implemented an in-memory thread-safe singleton (`TestingConfigurations.getInstance()`). Configuration loads exactly once on startup, workers read from shared memory, and database pressure drops to near-zero.
-
-### Layer 2: File-Based Progress Checkpoints (On-Disk)
-
-To coordinate phases across pod restarts, we used a localized persistent file-based state machine on the container's persistent volume:
+**On disk,** a file on the container's persistent volume tracks phase progress:
 
 ```json
 {
@@ -169,8 +123,6 @@ To coordinate phases across pod restarts, we used a localized persistent file-ba
   "CONSUMER_RUNNING": true
 }
 ```
-
-This file acted as our source of truth during an unexpected boot sequence:
 
 ```
             [Service Starts]
@@ -190,24 +142,21 @@ This file acted as our source of truth during an unexpected boot sequence:
                         └───────────────────┘
 ```
 
-- **Kafka Offsets** handled message-level recovery
-- **The State File** handled workflow-phase recovery
+Two recovery mechanisms at two granularities: Kafka offsets recover message-level position, the state file recovers workflow-phase position. Neither substitutes for the other, which is why both exist.
 
-## The Payoff
+Choosing a file on a persistent volume over a row in MongoDB was deliberate and is the decision I'd most expect an argument about. A database row is the cleaner answer and survives losing the volume. The file wins on the specific failure we cared about: it's readable during the boot sequence before any connection pool exists, so recovery doesn't depend on the thing that might have caused the crash. If the volume goes, we re-run the producer phase and eat the duplicates, and we decided that was the cheaper failure.
 
-| Metric | Before | After |
+## What changed
+
+| | Before | After |
 |---|---|---|
-| Execution Model | Sequential | Highly Parallel |
-| Test Duration (70k tests) | ~6 Hours | Minutes |
-| Throughput | Baseline | ~100x Improvement |
-| Duplicate Results | Frequent on failure | Eliminated |
-| Kafka Rebalances | Constant under load | Zero |
-| Timeout / Cancellation | Blocking / Broken | Controlled & Responsive |
+| Tests in flight | 1 | 100 (`maxConcurrency`) |
+| Offset tracking | batch-level | per-message |
+| Hung endpoint | occupies a thread indefinitely | cancelled at 4 min, `TEST_TIMED_OUT` persisted |
+| Rebalances under load | continuous | none; heartbeat decoupled from execution |
+| Crash mid-run | producer re-runs, duplicate jobs | producer skipped via state file |
+| Ordering guarantee | per-partition | none (`UNORDERED`) |
 
-## Final Thoughts
+The last row is there on purpose. It's what we gave up, and any table that only lists what improved is selling you something.
 
-The most rewarding part of this project wasn't working with Kafka itself. It was managing **everything around it**.
-
-Distributed systems tutorials make streaming look simple: you write a producer, you write a consumer, and messages flow. But production environments don't live in tutorials. They throw network partitions, hanging APIs, unexpected restarts, and race conditions at your code.
-
-Infrastructure gives you the primitives. **Reliability is still something you have to engineer.**
+The thing I'd carry to the next system is that none of the wins came from Kafka. Kafka gave us a durable ordered log and then held its position. Every problem in this post lived in the layer above it: how much work to admit, how long to let it run, what to do when it doesn't finish, and how to know on boot whether you already did it.

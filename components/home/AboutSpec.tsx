@@ -9,7 +9,6 @@ const SPEC = [
   ["employer",   "Akto (akto.io)"],
   ["stack",      "Java · Python · React · LangGraph · MongoDB · Kafka · Docker · Redis"],
   ["domain",     "API Security · Distributed Systems · AI Infra"],
-  ["status",     "● AVAILABLE_FOR_COLLABORATION"],
   ["location",   "India"],
   ["contact",    "kr.aryan2307@gmail.com"],
 ];
